@@ -1,11 +1,12 @@
 'use client'
 import { useState } from 'react'
+import Image from 'next/image'
 import { useApp, api } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Sprout, Mail, Lock, ArrowRight, Loader2 } from 'lucide-react'
+import { Mail, Lock, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 export default function LoginView() {
@@ -37,9 +38,7 @@ export default function LoginView() {
   return (
     <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-md flex-col justify-center px-4 py-10">
       <div className="mb-6 flex flex-col items-center text-center">
-        <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-          <Sprout className="h-6 w-6" />
-        </span>
+        <Image src="/logo-icon.png" alt="GoviSahana logo" width={64} height={64} className="h-16 w-16" />
         <h1 className="mt-4 text-2xl font-bold">Welcome back</h1>
         <p className="mt-1 text-sm text-muted-foreground">Sign in to your GoviSahana account</p>
       </div>

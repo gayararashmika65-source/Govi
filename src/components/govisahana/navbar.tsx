@@ -1,5 +1,6 @@
 'use client'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import { useApp } from '@/lib/store'
 import { Button } from '@/components/ui/button'
@@ -10,7 +11,7 @@ import {
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
-  Sprout, Menu, Bell, LogOut, User as UserIcon, LayoutDashboard,
+  Menu, Bell, LogOut, User as UserIcon, LayoutDashboard,
   Search, ShieldCheck, ChevronDown,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -64,9 +65,13 @@ export function Navbar() {
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:px-6">
         {/* Logo */}
         <button onClick={() => nav('home')} className="flex items-center gap-2.5 shrink-0">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-            <Sprout className="h-5 w-5" />
-          </span>
+          <img
+            src="/logo-icon.png"
+            alt="GoviSahana logo"
+            width={36}
+            height={36}
+            className="h-9 w-9 shrink-0"
+          />
           <span className="flex flex-col leading-none text-left">
             <span className="text-base font-bold tracking-tight text-foreground">GoviSahana</span>
             <span className="hidden text-[10px] font-medium uppercase tracking-wider text-muted-foreground sm:block">
@@ -174,9 +179,7 @@ export function Navbar() {
             </SheetTrigger>
             <SheetContent side="left" className="w-72">
               <SheetTitle className="mb-4 flex items-center gap-2">
-                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <Sprout className="h-4 w-4" />
-                </span>
+                <Image src="/logo-icon.png" alt="GoviSahana logo" width={32} height={32} className="h-8 w-8" />
                 GoviSahana
               </SheetTitle>
               <nav className="flex flex-col gap-1">

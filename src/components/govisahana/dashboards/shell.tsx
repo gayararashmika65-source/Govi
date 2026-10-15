@@ -1,12 +1,13 @@
 'use client'
 import { useState } from 'react'
+import Image from 'next/image'
 import { useApp } from '@/lib/store'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet'
 import { RoleBadge } from '@/components/govisahana/badges'
-import { Menu, LogOut, Bell, Sprout, LayoutGrid, Stethoscope, Plus, Search, Wheat, MessageSquare, Inbox, CalendarClock, ClipboardList, Package, Briefcase, Send, Wrench, ShieldCheck, Store, Users, Flag, ScrollText, Settings } from 'lucide-react'
+import { Menu, LogOut, Bell, LayoutGrid, Stethoscope, Plus, Search, Wheat, MessageSquare, Inbox, CalendarClock, ClipboardList, Package, Briefcase, Send, Wrench, ShieldCheck, Store, Users, Flag, ScrollText, Settings } from 'lucide-react'
 import { useApp as useAppStore } from '@/lib/store'
 import FarmerDashboard from './farmer'
 import ExpertDashboard from './expert'
@@ -94,7 +95,7 @@ function SidebarContent({ userName, userRole, avatarUrl, nav, currentTab, hasSub
     <div className="flex h-full flex-col">
       <div className="border-b border-sidebar-border p-4">
         <button onClick={onHome} className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground"><Sprout className="h-5 w-5" /></span>
+          <Image src="/logo-icon.png" alt="GoviSahana logo" width={36} height={36} className="h-9 w-9 shrink-0" />
           <div className="leading-none text-left">
             <div className="text-base font-bold text-sidebar-foreground">GoviSahana</div>
             <div className="text-[10px] text-sidebar-foreground/60">Dashboard</div>

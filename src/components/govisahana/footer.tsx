@@ -1,5 +1,6 @@
 'use client'
-import { Sprout, Mail, Phone, MapPin, Facebook, Twitter, Youtube, Linkedin } from 'lucide-react'
+import Image from 'next/image'
+import { Mail, Phone, MapPin, Facebook, Twitter, Youtube, Linkedin } from 'lucide-react'
 import { useApp } from '@/lib/store'
 import type { View } from '@/lib/store'
 
@@ -41,15 +42,13 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
         <div className="grid gap-10 lg:grid-cols-5">
           <div className="lg:col-span-2">
-            <div className="flex items-center gap-2.5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-                <Sprout className="h-5 w-5" />
-              </span>
-              <div className="leading-none">
-                <div className="text-base font-bold text-foreground">GoviSahana</div>
-                <div className="text-xs text-muted-foreground">Bridging Rural Farmers with Experts</div>
-              </div>
-            </div>
+            <Image
+              src="/logo-transparent.png"
+              alt="GoviSahana"
+              width={160}
+              height={76}
+              className="h-16 w-auto"
+            />
             <p className="mt-4 max-w-sm text-sm text-muted-foreground leading-relaxed">
               A digital agriculture platform connecting Sri Lankan farmers with verified agricultural
               experts, enterprises, workers and buyers — to close the knowledge gap and modernise farming.
