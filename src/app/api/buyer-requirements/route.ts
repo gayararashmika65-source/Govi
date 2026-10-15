@@ -1,8 +1,10 @@
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { db } from '@/lib/db'
-import { getSession } from '@/lib/auth'
+import { getSession, useSupabaseAuth } from '@/lib/auth'
+import { getSupabaseAdmin } from '@/lib/supabase-server'
 import { unauthorized, apiError, audit } from '@/lib/server-helpers'
+import { snakeToCamel } from '@/lib/case-convert'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
@@ -10,6 +12,23 @@ export async function GET(req: NextRequest) {
   const mine = searchParams.get('mine') === 'true'
   const session = await getSession()
   if (!session) return unauthorized()
+
+  if (useSupabaseAuth) {
+    const admin = getSupabaseAdmin()
+    if (!admin) return apiError('Supabase not configured', 500)
+    let query = admin.from('buyer_requirements').select('*, owner:profiles!buyer_requirements_owner_id_fkey(id, name)')
+    if (mine) {
+      query = query.eq('owner_id', session.id)
+    } else {
+      query = query.eq('status', 'OPEN')
+    }
+    if (q) query = query.ilike('crop_name', `%${q}%`)
+    query = query.order('created_at', { ascending: false }).limit(80)
+    const { data, error } = await query
+    if (error) return apiError(error.message, 500)
+    return Response.json({ requirements: (data || []).map(snakeToCamel) })
+  }
+
   const where = {
     AND: [
       mine && session ? { ownerId: session.id } : { status: 'OPEN' },
@@ -43,6 +62,23 @@ export async function POST(req: NextRequest) {
   const parsed = schema.safeParse(body)
   if (!parsed.success) return apiError(parsed.error.issues[0]?.message ?? 'Invalid')
   const { closingDate, ...rest } = parsed.data
+
+  if (useSupabaseAuth) {
+    const admin = getSupabaseAdmin()
+    if (!admin) return apiError('Supabase not configured', 500)
+    const { data: requirement, error } = await admin.from('buyer_requirements').insert({
+      owner_id: session.id, crop_name: rest.cropName,
+      quantity: rest.quantity ?? null, unit: rest.unit || null,
+      preferred_district: rest.preferredDistrict || null, target_price: rest.targetPrice ?? null,
+      delivery_req: rest.deliveryReq || null,
+      closing_date: closingDate ? new Date(closingDate).toISOString().split('T')[0] : null,
+      status: 'OPEN',
+    }).select().single()
+    if (error) return apiError(error.message, 500)
+    await audit(session.id, 'BUYER_REQ_CREATE', requirement.id, rest.cropName)
+    return Response.json({ requirement: snakeToCamel(requirement) })
+  }
+
   const requirement = await db.buyerRequirement.create({
     data: { ownerId: session.id, ...rest, ...(closingDate ? { closingDate: new Date(closingDate) } : {}), status: 'OPEN' },
   })

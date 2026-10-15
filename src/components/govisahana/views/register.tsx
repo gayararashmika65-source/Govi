@@ -27,13 +27,19 @@ export default function RegisterView() {
     e.preventDefault()
     setLoading(true)
     try {
-      await api('/api/auth/register', {
+      const data = await api<{ emailConfirmationRequired?: boolean }>('/api/auth/register', {
         method: 'POST',
         body: JSON.stringify({ ...form, role }),
       })
-      await refreshUser()
-      toast.success('Account created! Welcome to GoviSahana.')
-      setView('onboarding')
+      if (data.emailConfirmationRequired) {
+        // Supabase path with email confirmation enabled — user must confirm before logging in.
+        toast.success('Account created! Please check your email to confirm your address, then sign in.')
+        setView('login')
+      } else {
+        await refreshUser()
+        toast.success('Account created! Welcome to GoviSahana.')
+        setView('onboarding')
+      }
     } catch (err) {
       toast.error((err as Error).message)
     } finally {
