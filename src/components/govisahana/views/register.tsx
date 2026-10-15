@@ -1,6 +1,5 @@
 'use client'
 import { useState } from 'react'
-import Image from 'next/image'
 import { useApp, api } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -59,7 +58,7 @@ export default function RegisterView() {
       {step === 1 ? (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Image src="/logo-icon.png" alt="GoviSahana logo" width={24} height={24} className="h-6 w-6" /> Join GoviSahana</CardTitle>
+            <CardTitle className="flex items-center gap-2"><img src="/logo-icon.png" alt="GoviSahana logo" width={24} height={24} className="h-6 w-6" /> Join GoviSahana</CardTitle>
             <CardDescription>Select the option that best describes you. Farmer registration is always free.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">

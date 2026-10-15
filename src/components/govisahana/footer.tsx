@@ -1,5 +1,4 @@
 'use client'
-import Image from 'next/image'
 import { Mail, Phone, MapPin, Facebook, Twitter, Youtube, Linkedin } from 'lucide-react'
 import { useApp } from '@/lib/store'
 import type { View } from '@/lib/store'
@@ -42,7 +41,7 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
         <div className="grid gap-10 lg:grid-cols-5">
           <div className="lg:col-span-2">
-            <Image
+            <img
               src="/logo-transparent.png"
               alt="GoviSahana"
               width={160}

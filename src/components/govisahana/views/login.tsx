@@ -1,6 +1,5 @@
 'use client'
 import { useState } from 'react'
-import Image from 'next/image'
 import { useApp, api } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -38,7 +37,7 @@ export default function LoginView() {
   return (
     <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-md flex-col justify-center px-4 py-10">
       <div className="mb-6 flex flex-col items-center text-center">
-        <Image src="/logo-icon.png" alt="GoviSahana logo" width={64} height={64} className="h-16 w-16" />
+        <img src="/logo-icon.png" alt="GoviSahana logo" width={64} height={64} className="h-16 w-16" />
         <h1 className="mt-4 text-2xl font-bold">Welcome back</h1>
         <p className="mt-1 text-sm text-muted-foreground">Sign in to your GoviSahana account</p>
       </div>

@@ -1,6 +1,5 @@
 'use client'
 import Link from 'next/link'
-import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import { useApp } from '@/lib/store'
 import { Button } from '@/components/ui/button'
@@ -179,7 +178,7 @@ export function Navbar() {
             </SheetTrigger>
             <SheetContent side="left" className="w-72">
               <SheetTitle className="mb-4 flex items-center gap-2">
-                <Image src="/logo-icon.png" alt="GoviSahana logo" width={32} height={32} className="h-8 w-8" />
+                <img src="/logo-icon.png" alt="GoviSahana logo" width={32} height={32} className="h-8 w-8" />
                 GoviSahana
               </SheetTitle>
               <nav className="flex flex-col gap-1">

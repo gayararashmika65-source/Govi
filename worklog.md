@@ -131,3 +131,30 @@ Stage Summary:
 - Note: Agent Browser's Playwright `click` had a React 19 event-delegation quirk in this env (didn't trigger onClick), but programmatic `.click()` confirmed all navigation/interactions work — this is a test-tooling issue, not an app bug (real browser mouse clicks work fine).
 - Deliverables: complete frontend, backend API routes, Prisma schema + migrations, auth & RBAC, all 6 dashboards, consultation workflow, marketplaces, notifications, admin verification/moderation/audit, .env.example, README with setup/testing/deploy guide.
 - Demo logins (password123): farmer/expert/enterprise/worker/buyer/admin @demo.lk.
+
+---
+Task ID: 11
+Agent: Main (orchestrator)
+Task: Replace placeholder logo with the user's original GoviSahana logo
+
+Work Log:
+- User uploaded the original logo (upload/pasted_image_1792070560711.png) — a 1024x996 JPEG containing a circular green leaf icon (no text) on a pale cream background.
+- Wrote scripts/process-logo.ts using sharp to: (1) remove the pale-cream background via luminance threshold → transparent alpha, (2) tight-crop to the icon's bounding box (→ 910x910), (3) generate variants: logo.png / logo-transparent.png (full), logo-icon.png (64x64), favicon-16/32/48/96.png, apple-touch-icon.png (180x180 on white), og-image.png (1200x630 icon centered on brand green).
+- Replaced the placeholder Lucide Sprout logo everywhere:
+  • Navbar (desktop + mobile sheet) → <img src="/logo-icon.png">
+  • Footer → <img src="/logo-transparent.png"> (full circular icon)
+  • Dashboard sidebar → <img src="/logo-icon.png">
+  • Login view header → <img src="/logo-icon.png"> (large 64x64)
+  • Register view "Join GoviSahana" header → <img src="/logo-icon.png">
+- Updated layout.tsx metadata: icons (favicon-16/32/48 + apple-touch-icon), openGraph + twitter images (og-image.png), metadataBase.
+- Switched from next/image <Image> to plain <img> tags — the Next.js image optimizer was not rendering the PNGs reliably in this sandbox; plain <img> works and is simpler for static local assets. Removed unused `import Image from 'next/image'` from all 5 files.
+
+Verification (Agent Browser + VLM):
+- Home navbar: circular green leaf icon + "GoviSahana" + "AGRICULTURE, CONNECTED" tagline ✓
+- Footer: circular green leaf icon at top of left column ✓
+- Dashboard sidebar: icon + "GoviSahana / Dashboard" ✓
+- Favicon: <link rel=icon> → /favicon-16.png ✓, apple-touch-icon ✓
+- Lint: 0 errors, 0 warnings.
+
+Stage Summary:
+- GoviSahana branding is now consistent everywhere (navbar, footer, dashboard sidebar, login, register, favicon, OG image, apple-touch-icon). The user's original circular green leaf logo is used throughout. No placeholder Sprout icon remains in brand positions.

@@ -1,6 +1,5 @@
 'use client'
 import { useState } from 'react'
-import Image from 'next/image'
 import { useApp } from '@/lib/store'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -95,7 +94,7 @@ function SidebarContent({ userName, userRole, avatarUrl, nav, currentTab, hasSub
     <div className="flex h-full flex-col">
       <div className="border-b border-sidebar-border p-4">
         <button onClick={onHome} className="flex items-center gap-2.5">
-          <Image src="/logo-icon.png" alt="GoviSahana logo" width={36} height={36} className="h-9 w-9 shrink-0" />
+          <img src="/logo-icon.png" alt="GoviSahana logo" width={36} height={36} className="h-9 w-9 shrink-0" />
           <div className="leading-none text-left">
             <div className="text-base font-bold text-sidebar-foreground">GoviSahana</div>
             <div className="text-[10px] text-sidebar-foreground/60">Dashboard</div>
