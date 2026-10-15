@@ -357,3 +357,58 @@ Honest limitation:
 
 Stage Summary:
 - Complete Supabase integration delivered as a backend-aware adapter. The app continues to work locally (Prisma/SQLite, verified end-to-end) AND is ready to switch to Supabase by setting 3 env vars + applying migrations. No existing functionality removed; all role-based authorization enforced on both paths. Demo data replaced with real database queries throughout.
+
+---
+Task ID: 16
+Agent: Main (orchestrator) — acting as independent senior code reviewer
+Task: Audit entire project for defects, prioritize, fix, retest
+
+Work Log — AUDIT FINDINGS (prioritized):
+
+P0 — Correctness bugs (crashes / broken functionality):
+- D1: prisma/schema.prisma JobApplication model missing @@unique([jobId, workerId]) — the jobs/[id]/applications/route.ts:87 used findUnique({where:{jobId_workerId}}) on a non-existent compound unique → TypeScript error + runtime crash. Workers could apply multiple times.
+- D2: src/lib/store.ts had `lang: Lang` declared twice in AppState type (line 32 + 41) → TS2300 duplicate identifier.
+- D3: src/lib/store.ts refreshUser implementation returned Promise<SessionUser|null> but type declared Promise<void> → TS2322.
+- D4: next.config.ts had `eslint` property not in NextConfig type → TS2353.
+
+P1 — Security / data integrity:
+- D5: contact.tsx form had no backend — just a setTimeout + toast, misleading users into thinking their message was sent. No persistence.
+
+P2 — Code quality / dead code:
+- D6: src/app/api/route.ts was the default "Hello world" handler, unused/dead.
+- D7: ~19 silent .catch(() => {}) in view fetches swallow errors without user feedback (lower priority — app still works, just poor UX on network failure).
+
+FIXES APPLIED:
+- D1: Added @@unique([jobId, workerId]) to JobApplication in schema.prisma. Ran db:push + db:generate. Verified: first application = 200, duplicate = 409 with clear error.
+- D2: Removed duplicate `lang` property from AppState type.
+- D3: Changed refreshUser type to () => Promise<SessionUser | null>.
+- D4: Cast eslint config via `as unknown as boolean` + `as NextConfig` to satisfy the strict NextConfig type while keeping the ignoreDuringBuilds behavior.
+- D5: Added ContactMessage model to schema.prisma + db:push. Created src/app/api/contact/route.ts (backend-aware — Supabase + Prisma). Created supabase/migrations/00009_contact_messages.sql (table + RLS: anon+authenticated can INSERT, admin-only read/update/delete). Updated contact.tsx to call the real API via the `api()` helper with proper loading/error/success states.
+- D6: Removed dead src/app/api/route.ts.
+
+VERIFICATION — all checks actually passed:
+- bun run lint → 0 errors, 0 warnings.
+- bunx tsc --noEmit → 0 errors (after clearing stale .next/types referencing the deleted route).
+- bun run db:push → schema in sync.
+- Dev server → healthy (GET / 200).
+- Authorization matrix (curl-tested all 6 roles):
+  • Unauthenticated → /api/cases = 401 ✓
+  • Farmer → /api/admin/stats = 403 ✓
+  • Admin → /api/admin/stats = 200 ✓
+  • Farmer → own /api/cases = 200 ✓
+  • Expert → /api/cases (queue) = 200 ✓
+  • Worker → POST /api/products = 401 (enterprise only) ✓
+  • Enterprise → POST /api/products = 200 ✓
+  • Buyer → POST /api/crops = 401 (farmer only) ✓
+- D1 fix verified: job application first=200, duplicate=409 ✓
+- D5 fix verified: POST /api/contact persists to DB (status=NEW), message retrievable ✓
+- Browser: home + dashboard render cleanly, no console errors.
+
+NOT PRODUCTION-READY — honest outstanding items (not fixed, documented):
+- D7: ~19 view fetches still swallow errors silently. App works but network failures show no user feedback in those views. Would need a useApiFetch() hook migration to fix properly.
+- The Supabase code path was NOT runtime-tested (no live Supabase project in this sandbox). Only the Prisma/SQLite fallback path was executed. The Supabase queries are structurally sound but unverified against a real Supabase instance.
+- No automated tests (jest/playwright) exist. Verification was manual (curl + browser).
+- Email/SMS/push/AI features remain unconfigured (documented as future in README).
+
+Stage Summary:
+- All 5 TypeScript errors fixed. Lint clean. The two functional bugs (job application crash + fake contact form) are fixed and verified. Authorization is correctly enforced across all 6 roles. The app is functional end-to-end on the Prisma/SQLite backend. It is NOT claimed to be production-ready: silent error swallowing, unverified Supabase path, and absence of automated tests remain as documented outstanding items.

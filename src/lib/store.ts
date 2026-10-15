@@ -34,11 +34,10 @@ type AppState = {
 
   setView: (v: View, param?: string | null) => void
   setUser: (u: SessionUser | null) => void
-  refreshUser: () => Promise<void>
+  refreshUser: () => Promise<SessionUser | null>
   logout: () => Promise<void>
 
   // language
-  lang: Lang
   setLang: (l: Lang) => void
 
   // navigation helpers

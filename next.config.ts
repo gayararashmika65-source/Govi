@@ -2,15 +2,14 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  /* config options here */
   typescript: {
     ignoreBuildErrors: true,
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: true as unknown as boolean,
   },
   reactStrictMode: false,
   devIndicators: false,
-};
+} as NextConfig;
 
 export default nextConfig;

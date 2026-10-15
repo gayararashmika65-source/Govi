@@ -1,6 +1,6 @@
 'use client'
 import { useState, type FormEvent } from 'react'
-import { useApp } from '@/lib/store'
+import { useApp, api } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -23,19 +23,22 @@ export default function ContactView() {
     setForm((f) => ({ ...f, [key]: value }))
   }
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     if (!form.name || !form.email || !form.subject || !form.message) {
       toast.error('Please fill in all fields before sending.')
       return
     }
     setSubmitting(true)
-    // NOTE: This is a demo platform. No real API call is made.
-    setTimeout(() => {
-      setSubmitting(false)
+    try {
+      await api('/api/contact', { method: 'POST', body: JSON.stringify(form) })
       toast.success('Thank you! Your message has been received. Our team will respond within 48 hours.')
       setForm({ name: '', email: '', subject: '', message: '' })
-    }, 400)
+    } catch (err) {
+      toast.error((err as Error).message || 'Failed to send message. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const contactInfo = [

@@ -326,6 +326,8 @@ model JobApplication {
   status      String   @default("PENDING") // PENDING | ACCEPTED | REJECTED
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@unique([jobId, workerId])
 }
 
 model Enquiry {
@@ -388,5 +390,15 @@ model AuditLog {
   action    String
   target    String?
   detail    String?
+  createdAt DateTime @default(now())
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  subject   String
+  message   String
+  status    String   @default("NEW") // NEW | READ | RESOLVED
   createdAt DateTime @default(now())
 }
