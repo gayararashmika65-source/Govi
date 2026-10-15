@@ -1,5 +1,21 @@
+import nodemailer from 'nodemailer'
 import { Resend } from 'resend'
 
+// 1. Gmail SMTP configuration (Sends from govisahana.srilanka@gmail.com to ANY email, NO domain needed!)
+const gmailUser = process.env.GMAIL_USER || process.env.SMTP_USER || 'govisahana.srilanka@gmail.com'
+const gmailPass = (process.env.GMAIL_APP_PASSWORD || process.env.SMTP_PASS || '').replace(/\s+/g, '')
+
+const gmailTransporter = gmailPass
+  ? nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: gmailUser,
+        pass: gmailPass,
+      },
+    })
+  : null
+
+// 2. Resend fallback configuration
 const apiKey = process.env.RESEND_API_KEY
 const resend = apiKey ? new Resend(apiKey) : null
 const fromEmail = process.env.RESEND_FROM_EMAIL || 'GoviSahana <onboarding@resend.dev>'
@@ -52,30 +68,56 @@ export async function sendOtpEmail({ to, code, purpose = 'login' }: SendOtpParam
     </html>
   `
 
-  if (!resend) {
-    console.log('\n==========================================')
-    console.log(`[MOCK RESEND EMAIL] To: ${to} | Code: ${code} | Purpose: ${purpose}`)
-    console.log('Set RESEND_API_KEY in your .env to send real emails via Resend.')
-    console.log('==========================================\n')
-    return { success: true, simulated: true, code }
+  // Priority 1: Send through Gmail SMTP if app password is provided
+  if (gmailTransporter) {
+    try {
+      const info = await gmailTransporter.sendMail({
+        from: `"GoviSahana" <${gmailUser}>`,
+        to,
+        subject,
+        html,
+      })
+      console.log(`[Gmail SMTP Success]: Sent OTP email from ${gmailUser} to ${to} (Message ID: ${info.messageId})`)
+      return { success: true, id: info.messageId }
+    } catch (err) {
+      console.error('Failed to send email via Gmail SMTP:', err)
+      throw new Error('Gmail send failed: ' + (err as Error).message)
+    }
   }
 
-  try {
-    const response = await resend.emails.send({
-      from: fromEmail,
-      to,
-      subject,
-      html,
-    })
+  // Priority 2: Send through Resend if key is provided
+  if (resend) {
+    try {
+      const response = await resend.emails.send({
+        from: fromEmail,
+        to,
+        subject,
+        html,
+      })
 
-    if (response.error) {
-      console.error('[Resend Error]:', response.error)
-      // If unverified domain limitation on Resend free tier, fall back to dev simulation
-      if (
-        response.error.name === 'validation_error' &&
-        response.error.message?.includes('only send testing emails to your own email address')
-      ) {
-        console.warn(`[Resend Sandbox]: Cannot send to external recipient ${to} without a custom domain. Using simulated code: ${code}`)
+      if (response.error) {
+        console.error('[Resend Error]:', response.error)
+        // If unverified domain limitation on Resend free tier, fall back to dev simulation
+        if (
+          response.error.name === 'validation_error' &&
+          response.error.message?.includes('only send testing emails to your own email address')
+        ) {
+          console.warn(`[Resend Sandbox]: Cannot send to external recipient ${to} without a custom domain. Using simulated code: ${code}`)
+          return {
+            success: true,
+            simulated: true,
+            code,
+            warning: 'Sandbox mode: to send to all emails, verify your domain in Resend dashboard.',
+          }
+        }
+        throw new Error(response.error.message)
+      }
+
+      return { success: true, id: response.data?.id }
+    } catch (err: unknown) {
+      const errorObj = err as { message?: string }
+      if (errorObj?.message?.includes('only send testing emails to your own email address')) {
+        console.warn(`[Resend Sandbox]: Cannot send to external recipient ${to}. Using simulated code: ${code}`)
         return {
           success: true,
           simulated: true,
@@ -83,22 +125,15 @@ export async function sendOtpEmail({ to, code, purpose = 'login' }: SendOtpParam
           warning: 'Sandbox mode: to send to all emails, verify your domain in Resend dashboard.',
         }
       }
-      throw new Error(response.error.message)
+      console.error('Failed to send email via Resend:', err)
+      throw err
     }
-
-    return { success: true, id: response.data?.id }
-  } catch (err: unknown) {
-    const errorObj = err as { message?: string }
-    if (errorObj?.message?.includes('only send testing emails to your own email address')) {
-      console.warn(`[Resend Sandbox]: Cannot send to external recipient ${to}. Using simulated code: ${code}`)
-      return {
-        success: true,
-        simulated: true,
-        code,
-        warning: 'Sandbox mode: to send to all emails, verify your domain in Resend dashboard.',
-      }
-    }
-    console.error('Failed to send email via Resend:', err)
-    throw err
   }
+
+  // Fallback: simulated mode
+  console.log('\n==========================================')
+  console.log(`[DEV OTP EMAIL] To: ${to} | Code: ${code} | Purpose: ${purpose}`)
+  console.log('Set GMAIL_APP_PASSWORD or RESEND_API_KEY in your .env to send real emails.')
+  console.log('==========================================\n')
+  return { success: true, simulated: true, code }
 }
