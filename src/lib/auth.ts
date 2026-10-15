@@ -100,7 +100,38 @@ export type SessionUser = {
 // ----------------- getSession() — backend-aware -----------------
 
 export async function getSession(): Promise<SessionUser | null> {
-  if (useSupabaseAuth) return getSessionSupabase()
+  if (useSupabaseAuth) {
+    const s = await getSessionSupabase()
+    if (s) return s
+
+    // Check HMAC session token for OTP login
+    const store = await cookies()
+    const token = store.get(SESSION_COOKIE)?.value
+    if (token) {
+      const verified = verifyToken(token)
+      if (verified) {
+        const admin = getSupabaseAdmin()
+        if (admin) {
+          const { data: profile } = await admin
+            .from('profiles')
+            .select('id, email, name, role, status, avatar_url')
+            .eq('id', verified.uid)
+            .single()
+          if (profile && profile.status !== 'SUSPENDED') {
+            return {
+              id: profile.id,
+              email: profile.email,
+              name: profile.name,
+              role: profile.role as Role,
+              status: profile.status,
+              avatarUrl: profile.avatar_url,
+            }
+          }
+        }
+      }
+    }
+    return null
+  }
   return getSessionPrisma()
 }
 

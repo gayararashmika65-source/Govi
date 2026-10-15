@@ -709,7 +709,6 @@ create policy "notifications_insert_any_authenticated"
   on public.notifications for insert
   -- RLS-bypassing inserts happen via SECURITY DEFINER functions (see notify_user below).
   -- Direct client inserts are blocked.
-  using (false)
   with check (false);
 
 create policy "notifications_update_own"
@@ -776,7 +775,6 @@ create policy "audit_logs_read_admin"
 
 create policy "audit_logs_insert_any_authenticated"
   on public.audit_logs for insert
-  using (false)
   with check (false);
 
 create policy "audit_logs_delete_admin"
@@ -785,7 +783,7 @@ create policy "audit_logs_delete_admin"
 
 -- SECURITY DEFINER helper to write an audit log entry (bypasses RLS).
 create or replace function public.write_audit_log(
-  p_actor_id uuid default null,
+  p_actor_id uuid,
   p_action text,
   p_target text default null,
   p_detail text default null

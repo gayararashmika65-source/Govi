@@ -86,7 +86,7 @@ create table if not exists public.messages (
   created_at      timestamptz not null default now()
 );
 
-create index if not exists messages_consultation_id_idx on public.consultations(consultation_id);
+create index if not exists messages_consultation_id_idx on public.messages(consultation_id);
 create index if not exists messages_sender_id_idx        on public.messages(sender_id);
 create index if not exists messages_created_at_idx       on public.messages(created_at);
 -- index for fetching unread message counts

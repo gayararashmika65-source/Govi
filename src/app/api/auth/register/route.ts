@@ -24,27 +24,40 @@ export async function POST(req: NextRequest) {
 
   // ----- SUPABASE PATH -----
   if (useSupabaseAuth) {
-    const sb = getSupabase()
-    if (!sb) return apiError('Supabase not configured', 500)
-    const { data, error } = await sb.auth.signUp({
+    const admin = (await import('@/lib/supabase-server')).getSupabaseAdmin()
+    if (!admin) return apiError('Supabase not configured', 500)
+
+    // Check if user already exists
+    const { data: existing } = await admin.from('profiles').select('id').eq('email', email.toLowerCase()).maybeSingle()
+    if (existing) {
+      return apiError('An account with this email already exists', 409)
+    }
+
+    const { data: authData, error: authError } = await admin.auth.admin.createUser({
       email: email.toLowerCase(),
       password,
-      options: { data: { role, name, phone } }, // handle_new_user trigger reads these
+      email_confirm: true,
+      user_metadata: { role, name, phone },
     })
-    if (error) return apiError(error.message, 400)
-    if (!data.session) {
-      // Email confirmation required; the trigger still created the profile.
-      return Response.json({ user: null, emailConfirmationRequired: true })
+
+    if (authError || !authData.user) {
+      return apiError(authError?.message || 'Failed to create user account', 400)
     }
-    await setSupabaseTokenCookie(data.session.access_token)
-    await audit(data.user?.id || null, 'USER_REGISTER', data.user?.id, `Registered as ${role} (Supabase)`)
-    // Fetch the profile (created by the trigger) so the client gets the right shape.
-    const admin = (await import('@/lib/supabase-server')).getSupabaseAdmin()
-    const { data: profile } = await admin!.from('profiles').select('*').eq('id', data.user!.id).single()
+
+    await setSessionCookie(authData.user.id)
+    await audit(authData.user.id, 'USER_REGISTER', authData.user.id, `Registered as ${role} (Supabase)`)
+
+    // Fetch the profile (created by the trigger)
+    const { data: profile } = await admin.from('profiles').select('*').eq('id', authData.user.id).single()
+
     return Response.json({
       user: {
-        id: profile?.id, email: profile?.email, name: profile?.name,
-        role: profile?.role, status: profile?.status, avatarUrl: profile?.avatar_url,
+        id: profile?.id || authData.user.id,
+        email: profile?.email || email.toLowerCase(),
+        name: profile?.name || name,
+        role: profile?.role || role,
+        status: profile?.status || 'ACTIVE',
+        avatarUrl: profile?.avatar_url || null,
       },
     })
   }
