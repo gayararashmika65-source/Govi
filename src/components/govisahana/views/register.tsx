@@ -44,6 +44,7 @@ export default function RegisterView() {
   const [sendingOtp, setSendingOtp] = useState(false)
   const [verifying, setVerifying] = useState(false)
   const [countdown, setCountdown] = useState(0)
+  const [simulatedNotice, setSimulatedNotice] = useState<string | null>(null)
 
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }))
 
@@ -79,8 +80,10 @@ export default function RegisterView() {
       )
 
       if (res.simulated && res.code) {
-        toast.info(`Dev Mode OTP: ${res.code}`)
+        setSimulatedNotice(res.code)
+        toast.info(`Sandbox Mode OTP: ${res.code}`)
       } else {
+        setSimulatedNotice(null)
         toast.success(`Verification code sent to ${form.email}`)
       }
 
@@ -107,8 +110,10 @@ export default function RegisterView() {
         }
       )
       if (res.simulated && res.code) {
-        toast.info(`Dev Mode OTP: ${res.code}`)
+        setSimulatedNotice(res.code)
+        toast.info(`Sandbox Mode OTP: ${res.code}`)
       } else {
+        setSimulatedNotice(null)
         toast.success(`New code sent to ${form.email}`)
       }
       setCountdown(60)
@@ -390,6 +395,34 @@ export default function RegisterView() {
           </CardHeader>
 
           <CardContent className="space-y-6">
+            {simulatedNotice && (
+              <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-center">
+                <p className="text-xs font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                  Resend Free Tier Testing Mode
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Resend free tier only sends emails to the account owner (<code className="font-mono text-foreground font-semibold">ngrashmika1@gmail.com</code>). For testing with other emails, use this code:
+                </p>
+                <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+                  <span className="font-mono text-xl font-bold tracking-widest text-amber-900 dark:text-amber-200 bg-amber-500/20 px-3 py-1 rounded-md border border-amber-500/30">
+                    {simulatedNotice}
+                  </span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs border-amber-500/40 hover:bg-amber-500/20"
+                    onClick={() => {
+                      setOtp(simulatedNotice)
+                      verifyAndRegister(simulatedNotice)
+                    }}
+                  >
+                    Auto-fill & Complete
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <div className="flex flex-col items-center justify-center space-y-4">
               <InputOTP maxLength={6} value={otp} onChange={handleOtpChange} disabled={verifying}>
                 <InputOTPGroup className="gap-2">
