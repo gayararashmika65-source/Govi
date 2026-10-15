@@ -1,0 +1,392 @@
+// GoviSahana — Smart Agriculture Platform for Sri Lanka
+// Prisma schema (SQLite). Enums are represented as String for SQLite compatibility.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------- Core / Auth -----------------------------
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  phone        String?
+  role         String   @default("FARMER") // FARMER | EXPERT | ENTERPRISE | WORKER | BUYER | ADMIN
+  status       String   @default("ACTIVE") // ACTIVE | SUSPENDED | PENDING
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  farmerProfile      FarmerProfile?
+  expertProfile      ExpertProfile?
+  enterpriseProfile  EnterpriseProfile?
+  workerProfile      WorkerProfile?
+  buyerProfile       BuyerProfile?
+
+  casesOpened        AgriculturalCase[] @relation("FarmerCases")
+  casesAssigned      AgriculturalCase[] @relation("ExpertCases")
+  consultationsAsFarmer Consultation[]  @relation("ConsultationFarmer")
+  consultationsAsExpert Consultation[]  @relation("ConsultationExpert")
+  messagesSent       Message[]           @relation("SentMessages")
+  recommendations    ExpertRecommendation[] @relation("ExpertRecs")
+  notifications      Notification[]
+  products           ProductListing[]
+  services           ServiceListing[]
+  crops              CropListing[]
+  jobListings        JobListing[]
+  jobApplications    JobApplication[]
+  buyerRequirements  BuyerRequirement[]
+  enquiriesSent      Enquiry[]          @relation("EnquirySender")
+  enquiriesReceived  Enquiry[]          @relation("EnquiryRecipient")
+  reportsFiled       Report[]
+  auditLogs          AuditLog[]
+}
+
+// ----------------------------- Role profiles -----------------------------
+
+model FarmerProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  district    String?
+  location    String?
+  farmSizeAcres Float?
+  crops       String?  // comma separated crop names
+  bio         String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ExpertProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title           String?  // e.g. Agricultural Officer, Researcher
+  qualifications  String?  // comma separated
+  expertise       String?  // comma separated
+  crops           String?  // comma separated
+  languages       String?  // comma separated
+  serviceAreas    String?  // comma separated districts
+  bio             String?
+  hourlyRate      Float?
+  verified        Boolean  @default(false)
+  available       Boolean  @default(true)
+  rating          Float?   @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  verifications   ExpertVerification[]
+  slots           AvailabilitySlot[]
+  recommendations ExpertRecommendation[] @relation("ExpertRecProfile")
+}
+
+model ExpertVerification {
+  id            String   @id @default(cuid())
+  expertProfileId String
+  expert        ExpertProfile @relation(fields: [expertProfileId], references: [id], onDelete: Cascade)
+  documentPath  String
+  note          String?
+  status        String   @default("PENDING") // PENDING | APPROVED | REJECTED
+  reviewedBy    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model EnterpriseProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessName    String
+  businessType    String?  // seed supplier, fertilizer, equipment, irrigation, agri-tech
+  registrationNo  String?
+  district        String?
+  address         String?
+  verified        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model WorkerProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skills      String?  // comma separated
+  experience  String?
+  district    String?
+  available   Boolean  @default(true)
+  bio         String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model BuyerProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  buyerType   String?  // wholesaler, supermarket, processor, exporter, retailer, restaurant
+  company     String?
+  district    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ----------------------------- Cases & Consultations -----------------------------
+
+model AgriculturalCase {
+  id           String   @id @default(cuid())
+  farmerId     String
+  farmer       User     @relation("FarmerCases", fields: [farmerId], references: [id], onDelete: Cascade)
+  expertId     String?
+  expert       User?    @relation("ExpertCases", fields: [expertId], references: [id])
+  crop         String
+  category     String   // PEST | DISEASE | NUTRIENT | WATER | WEATHER | OTHER
+  title        String
+  description  String
+  status       String   @default("OPEN") // OPEN | UNDER_REVIEW | ASSIGNED | IN_PROGRESS | RESOLVED | CLOSED | CANCELLED
+  district     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  attachments    CaseAttachment[]
+  consultations  Consultation[]
+  recommendations ExpertRecommendation[]
+}
+
+model CaseAttachment {
+  id        String   @id @default(cuid())
+  caseId    String
+  agriCase  AgriculturalCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  filePath  String
+  createdAt DateTime @default(now())
+}
+
+model Consultation {
+  id          String   @id @default(cuid())
+  caseId      String
+  agriCase    AgriculturalCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  farmerId    String
+  expertId    String
+  farmer      User     @relation("ConsultationFarmer", fields: [farmerId], references: [id])
+  expert      User     @relation("ConsultationExpert", fields: [expertId], references: [id])
+  type        String   @default("CHAT") // CHAT | VIDEO | IN_PERSON
+  status      String   @default("REQUESTED") // REQUESTED | ACCEPTED | DECLINED | SCHEDULED | COMPLETED | CANCELLED
+  scheduledAt DateTime?
+  price       Float?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  messages       Message[]
+  recommendations ExpertRecommendation[]
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  consultationId String
+  consultation   Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User     @relation("SentMessages", fields: [senderId], references: [id])
+  body           String
+  read           Boolean  @default(false)
+  createdAt      DateTime @default(now())
+}
+
+model ExpertRecommendation {
+  id             String   @id @default(cuid())
+  caseId         String
+  agriCase       AgriculturalCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  consultationId String?
+  consultation   Consultation? @relation(fields: [consultationId], references: [id])
+  expertId       String
+  expert         User     @relation("ExpertRecs", fields: [expertId], references: [id])
+  expertProfileId String?
+  expertProfile  ExpertProfile? @relation("ExpertRecProfile", fields: [expertProfileId], references: [id])
+  diagnosis      String
+  advice         String
+  followUpNeeded Boolean  @default(false)
+  createdAt      DateTime @default(now())
+}
+
+model AvailabilitySlot {
+  id             String   @id @default(cuid())
+  expertProfileId String
+  expert         ExpertProfile @relation(fields: [expertProfileId], references: [id], onDelete: Cascade)
+  dayOfWeek      Int      // 0-6
+  startTime      String
+  endTime        String
+  createdAt      DateTime @default(now())
+}
+
+// ----------------------------- Marketplace -----------------------------
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  type      String   // PRODUCT | CROP | SERVICE | JOB | KNOWLEDGE
+  createdAt DateTime @default(now())
+}
+
+model ProductListing {
+  id          String   @id @default(cuid())
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  category    String?
+  price       Float?
+  unit        String?
+  imageUrl    String?
+  available   Boolean  @default(true)
+  district    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ServiceListing {
+  id          String   @id @default(cuid())
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  category    String?
+  price       Float?
+  imageUrl    String?
+  available   Boolean  @default(true)
+  district    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CropListing {
+  id            String   @id @default(cuid())
+  ownerId       String
+  owner         User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  cropName      String
+  variety       String?
+  quantity      Float
+  unit          String   // kg, bunch, ton, bag
+  expectedHarvestDate DateTime?
+  district      String?
+  askingPrice   Float?
+  grade         String?  // A | B | C
+  imageUrl      String?
+  available     Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model BuyerRequirement {
+  id            String   @id @default(cuid())
+  ownerId       String
+  owner         User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  cropName      String
+  quantity      Float?
+  unit          String?
+  preferredDistrict String?
+  targetPrice   Float?
+  deliveryReq   String?
+  closingDate   DateTime?
+  status        String   @default("OPEN")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model JobListing {
+  id          String   @id @default(cuid())
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  requiredSkills String?
+  location    String?
+  startDate   DateTime?
+  endDate     DateTime?
+  paymentTerms String?
+  wage        Float?
+  status      String   @default("OPEN")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  applications JobApplication[]
+}
+
+model JobApplication {
+  id          String   @id @default(cuid())
+  jobId       String
+  job         JobListing @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  workerId    String
+  worker      User     @relation(fields: [workerId], references: [id])
+  coverNote   String?
+  status      String   @default("PENDING") // PENDING | ACCEPTED | REJECTED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Enquiry {
+  id          String   @id @default(cuid())
+  type        String   // PRODUCT | CROP | SERVICE | BUYER_REQ
+  listingId   String
+  senderId    String
+  sender      User     @relation("EnquirySender", fields: [senderId], references: [id])
+  recipientId String
+  recipient   User     @relation("EnquiryRecipient", fields: [recipientId], references: [id])
+  message     String
+  status      String   @default("OPEN") // OPEN | RESPONDED | CLOSED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ----------------------------- Content & Platform -----------------------------
+
+model KnowledgeArticle {
+  id          String   @id @default(cuid())
+  title       String
+  summary     String
+  content     String
+  category    String?
+  authorName  String?
+  imageUrl    String?
+  tags        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // CASE | CONSULTATION | MESSAGE | VERIFICATION | ENQUIRY | JOB | SYSTEM
+  title     String
+  body      String
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Report {
+  id          String   @id @default(cuid())
+  reporterId  String
+  reporter    User     @relation(fields: [reporterId], references: [id])
+  targetType  String   // PRODUCT | CROP | SERVICE | JOB | USER | ARTICLE
+  targetId    String
+  reason      String
+  status      String   @default("OPEN") // OPEN | REVIEWING | RESOLVED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id])
+  action    String
+  target    String?
+  detail    String?
+  createdAt DateTime @default(now())
+}
