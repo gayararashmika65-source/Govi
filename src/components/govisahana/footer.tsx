@@ -53,9 +53,9 @@ export function Footer() {
               experts, enterprises, workers and buyers — to close the knowledge gap and modernise farming.
             </p>
             <div className="mt-4 space-y-1.5 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" /> Department of Agriculture, Peradeniya, Sri Lanka</div>
-              <div className="flex items-center gap-2"><Phone className="h-4 w-4 text-primary" /> +94 81 238 8000</div>
-              <div className="flex items-center gap-2"><Mail className="h-4 w-4 text-primary" /> hello@govisahana.lk</div>
+              <div className="flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" /> Dalugama, Kelaniya, Sri Lanka</div>
+              <div className="flex items-center gap-2"><Phone className="h-4 w-4 text-primary" /> 074 121 6582</div>
+              <div className="flex items-center gap-2"><Mail className="h-4 w-4 text-primary" /> govisahana.srilanka@gmail.com</div>
             </div>
           </div>
           {cols.map((c) => (

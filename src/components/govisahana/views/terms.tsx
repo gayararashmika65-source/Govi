@@ -249,9 +249,9 @@ export default function TermsView() {
             For any questions about these Terms, please contact us:
           </p>
           <ul className="list-disc space-y-1 pl-6">
-            <li>Department of Agriculture, Peradeniya, Sri Lanka</li>
-            <li>Phone: +94 81 238 8000</li>
-            <li>Email: hello@govisahana.lk</li>
+            <li>Dalugama, Kelaniya, Sri Lanka</li>
+            <li>Phone: 074 121 6582</li>
+            <li>Email: govisahana.srilanka@gmail.com</li>
           </ul>
           <p>
             You can also reach us via our{' '}

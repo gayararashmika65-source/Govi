@@ -42,9 +42,9 @@ export default function ContactView() {
   }
 
   const contactInfo = [
-    { icon: MapPin, label: 'Address', value: 'Department of Agriculture, Peradeniya, Sri Lanka' },
-    { icon: Phone, label: 'Phone', value: '+94 81 238 8000' },
-    { icon: Mail, label: 'Email', value: 'hello@govisahana.lk' },
+    { icon: MapPin, label: 'Address', value: 'Dalugama, Kelaniya, Sri Lanka' },
+    { icon: Phone, label: 'Phone', value: '074 121 6582' },
+    { icon: Mail, label: 'Email', value: 'govisahana.srilanka@gmail.com' },
     { icon: Clock, label: 'Office hours', value: 'Mon–Fri, 8:30 AM – 4:15 PM (Sri Lanka time)' },
   ]
 
