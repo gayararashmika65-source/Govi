@@ -23,12 +23,14 @@ const fromEmail = process.env.RESEND_FROM_EMAIL || 'GoviSahana <onboarding@resen
 interface SendOtpParams {
   to: string
   code: string
-  purpose?: 'login' | 'register'
+  purpose?: 'login' | 'register' | 'reset'
 }
 
 export async function sendOtpEmail({ to, code, purpose = 'login' }: SendOtpParams) {
   const subject = purpose === 'register' 
     ? 'Verify your email - GoviSahana' 
+    : purpose === 'reset'
+    ? 'Reset your password - GoviSahana'
     : 'Your GoviSahana Login Code'
 
   const html = `
@@ -46,10 +48,10 @@ export async function sendOtpEmail({ to, code, purpose = 'login' }: SendOtpParam
           </div>
           <div style="padding: 32px 28px;">
             <h2 style="font-size: 20px; font-weight: 600; color: #1e293b; margin-top: 0;">
-              ${purpose === 'register' ? 'Verify your email address' : 'Sign in with your verification code'}
+              ${purpose === 'register' ? 'Verify your email address' : purpose === 'reset' ? 'Reset your account password' : 'Sign in with your verification code'}
             </h2>
             <p style="font-size: 15px; color: #475569; line-height: 1.5; margin-bottom: 24px;">
-              Please use the 6-digit verification code below to ${purpose === 'register' ? 'complete your registration' : 'sign in to your GoviSahana account'}. This code is valid for <strong>10 minutes</strong>.
+              Please use the 6-digit verification code below to ${purpose === 'register' ? 'complete your registration' : purpose === 'reset' ? 'reset your account password' : 'sign in to your GoviSahana account'}. This code is valid for <strong>10 minutes</strong>.
             </p>
             <div style="background: #f0fdf4; border: 2px dashed #86efac; border-radius: 10px; padding: 20px; text-align: center; margin-bottom: 24px;">
               <span style="font-family: monospace, Courier, sans-serif; font-size: 36px; font-weight: 800; letter-spacing: 8px; color: #166534; display: inline-block;">

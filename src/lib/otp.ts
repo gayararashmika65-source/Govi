@@ -4,7 +4,7 @@ interface OtpEntry {
   code: string
   expiresAt: number
   attempts: number
-  purpose: 'login' | 'register'
+  purpose: 'login' | 'register' | 'reset'
 }
 
 const globalForOtp = globalThis as unknown as {
@@ -21,8 +21,9 @@ export function generateOtpCode(): string {
   return crypto.randomInt(100000, 999999).toString()
 }
 
-export function saveOtp(email: string, code: string, purpose: 'login' | 'register' = 'login') {
+export function saveOtp(email: string, code: string, purpose: 'login' | 'register' | 'reset' = 'login') {
   const normalized = email.toLowerCase().trim()
+  console.log(`[OTP Generated] Email: ${normalized} | Code: ${code} | Purpose: ${purpose}`)
   otpStore.set(normalized, {
     code,
     expiresAt: Date.now() + EXPIRY_MS,
@@ -31,7 +32,7 @@ export function saveOtp(email: string, code: string, purpose: 'login' | 'registe
   })
 }
 
-export function verifyOtp(email: string, code: string, purpose: 'login' | 'register' = 'login'): { valid: boolean; error?: string } {
+export function verifyOtp(email: string, code: string, purpose: 'login' | 'register' | 'reset' = 'login'): { valid: boolean; error?: string } {
   const normalized = email.toLowerCase().trim()
   const entry = otpStore.get(normalized)
 

@@ -9,9 +9,10 @@ import { getSupabaseAdmin } from '@/lib/supabase-server'
 const schema = z.object({
   email: z.string().email('Please enter a valid email address'),
   code: z.string().length(6, 'Verification code must be 6 digits'),
-  purpose: z.enum(['login', 'register']).default('login'),
+  purpose: z.enum(['login', 'register', 'reset']).default('login'),
   name: z.string().min(2, 'Name must be at least 2 characters').optional(),
   password: z.string().min(6, 'Password must be at least 6 characters').optional(),
+  newPassword: z.string().min(6, 'New password must be at least 6 characters').optional(),
   role: z.enum(['FARMER', 'EXPERT', 'ENTERPRISE', 'WORKER', 'BUYER'] as [Role, ...Role[]]).optional(),
   phone: z.string().optional(),
 })
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
     return apiError(parsed.error.issues[0]?.message || 'Invalid input')
   }
 
-  const { email, code, purpose, name, password, role, phone } = parsed.data
+  const { email, code, purpose, name, password, newPassword, role, phone } = parsed.data
   const normalizedEmail = email.toLowerCase().trim()
 
   // 1. Verify the OTP code
@@ -187,6 +188,103 @@ export async function POST(req: NextRequest) {
       await audit(user.id, 'USER_REGISTER_OTP', user.id, `Registered as ${role} via email OTP`)
 
       return Response.json({
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          status: user.status,
+          avatarUrl: user.avatarUrl,
+        },
+      })
+    }
+  }
+
+  // 4. Handle RESET PASSWORD
+  if (purpose === 'reset') {
+    const finalPassword = newPassword || password
+    if (!finalPassword || finalPassword.length < 6) {
+      return apiError('New password must be at least 6 characters.', 400)
+    }
+
+    if (useSupabaseAuth) {
+      const admin = getSupabaseAdmin()
+      if (!admin) return apiError('Supabase not configured', 500)
+
+      const { data: profile } = await admin
+        .from('profiles')
+        .select('*')
+        .eq('email', normalizedEmail)
+        .maybeSingle()
+
+      if (!profile) {
+        return apiError('No account found for this email address.', 404)
+      }
+      if (profile.status === 'SUSPENDED') {
+        return apiError('Your account has been suspended. Please contact support.', 403)
+      }
+
+      // Update password in Supabase Auth
+      const { error: updateErr } = await admin.auth.admin.updateUserById(profile.id, {
+        password: finalPassword,
+      })
+      if (updateErr) {
+        return apiError(updateErr.message || 'Failed to update password', 500)
+      }
+
+      await setSessionCookie(profile.id)
+
+      // Also set Supabase access token cookie
+      try {
+        const { getSupabase } = await import('@/lib/supabase-server')
+        const sb = getSupabase()
+        if (sb) {
+          const { data: loginData } = await sb.auth.signInWithPassword({
+            email: normalizedEmail,
+            password: finalPassword,
+          })
+          if (loginData?.session?.access_token) {
+            await setSupabaseTokenCookie(loginData.session.access_token)
+          }
+        }
+      } catch (err) {
+        console.warn('Could not set Supabase token cookie on password reset:', err)
+      }
+
+      await audit(profile.id, 'USER_PASSWORD_RESET', profile.id, 'Reset password via email OTP')
+
+      return Response.json({
+        success: true,
+        message: 'Password successfully updated!',
+        user: {
+          id: profile.id,
+          email: profile.email,
+          name: profile.name,
+          role: profile.role,
+          status: profile.status,
+          avatarUrl: profile.avatar_url,
+        },
+      })
+    } else {
+      const user = await db.user.findUnique({ where: { email: normalizedEmail } })
+      if (!user) {
+        return apiError('No account found for this email address.', 404)
+      }
+      if (user.status === 'SUSPENDED') {
+        return apiError('Your account has been suspended. Please contact support.', 403)
+      }
+
+      await db.user.update({
+        where: { id: user.id },
+        data: { passwordHash: hashPassword(finalPassword) },
+      })
+
+      await setSessionCookie(user.id)
+      await audit(user.id, 'USER_PASSWORD_RESET', user.id, 'Reset password via email OTP')
+
+      return Response.json({
+        success: true,
+        message: 'Password successfully updated!',
         user: {
           id: user.id,
           email: user.email,

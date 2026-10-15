@@ -9,7 +9,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-server'
 
 const schema = z.object({
   email: z.string().email('Please enter a valid email address'),
-  purpose: z.enum(['login', 'register']).default('login'),
+  purpose: z.enum(['login', 'register', 'reset']).default('login'),
 })
 
 export async function POST(req: NextRequest) {
@@ -45,6 +45,30 @@ export async function POST(req: NextRequest) {
       const user = await db.user.findUnique({ where: { email: normalizedEmail } })
       if (!user) {
         return apiError('No account found with this email. Please register first.', 404)
+      }
+      if (user.status === 'SUSPENDED') {
+        return apiError('Your account has been suspended. Please contact support.', 403)
+      }
+    }
+  }
+
+  // If purpose is reset, ensure the account exists
+  if (purpose === 'reset') {
+    if (useSupabaseAuth) {
+      const admin = getSupabaseAdmin()
+      if (admin) {
+        const { data: profile } = await admin.from('profiles').select('id, status').eq('email', normalizedEmail).maybeSingle()
+        if (!profile) {
+          return apiError('No account found with this email address.', 404)
+        }
+        if (profile.status === 'SUSPENDED') {
+          return apiError('Your account has been suspended. Please contact support.', 403)
+        }
+      }
+    } else {
+      const user = await db.user.findUnique({ where: { email: normalizedEmail } })
+      if (!user) {
+        return apiError('No account found with this email address.', 404)
       }
       if (user.status === 'SUSPENDED') {
         return apiError('Your account has been suspended. Please contact support.', 403)
