@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useApp } from '@/lib/store'
+import { useT } from '@/lib/use-t'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -33,46 +34,46 @@ export function useDashboard(): DashboardState {
   }
 }
 
-const NAV_BY_ROLE: Record<string, { label: string; tab: string; icon: React.ComponentType<{ className?: string }> }[]> = {
+const NAV_BY_ROLE: Record<string, { tKey: string; tab: string; icon: React.ComponentType<{ className?: string }> }[]> = {
   FARMER: [
-    { label: 'Overview', tab: 'overview', icon: LayoutGrid },
-    { label: 'My Cases', tab: 'cases', icon: Stethoscope },
-    { label: 'Report a Problem', tab: 'create', icon: Plus },
-    { label: 'Find Experts', tab: 'experts', icon: Search },
-    { label: 'My Crop Listings', tab: 'crops', icon: Wheat },
-    { label: 'Messages', tab: 'messages', icon: MessageSquare },
+    { tKey: 'dash.overview', tab: 'overview', icon: LayoutGrid },
+    { tKey: 'dash.myCases', tab: 'cases', icon: Stethoscope },
+    { tKey: 'dash.reportProblem', tab: 'create', icon: Plus },
+    { tKey: 'dash.findExperts', tab: 'experts', icon: Search },
+    { tKey: 'dash.myCrops', tab: 'crops', icon: Wheat },
+    { tKey: 'dash.messages', tab: 'messages', icon: MessageSquare },
   ],
   EXPERT: [
-    { label: 'Overview', tab: 'overview', icon: LayoutGrid },
-    { label: 'Case Queue', tab: 'queue', icon: Inbox },
-    { label: 'My Consultations', tab: 'consultations', icon: CalendarClock },
-    { label: 'Messages', tab: 'messages', icon: MessageSquare },
-    { label: 'Recommendations', tab: 'recs', icon: ClipboardList },
+    { tKey: 'dash.overview', tab: 'overview', icon: LayoutGrid },
+    { tKey: 'dash.caseQueue', tab: 'queue', icon: Inbox },
+    { tKey: 'dash.myConsultations', tab: 'consultations', icon: CalendarClock },
+    { tKey: 'dash.messages', tab: 'messages', icon: MessageSquare },
+    { tKey: 'dash.recommendations', tab: 'recs', icon: ClipboardList },
   ],
   ENTERPRISE: [
-    { label: 'Overview', tab: 'overview', icon: LayoutGrid },
-    { label: 'My Products', tab: 'products', icon: Package },
-    { label: 'Enquiries', tab: 'enquiries', icon: Inbox },
+    { tKey: 'dash.overview', tab: 'overview', icon: LayoutGrid },
+    { tKey: 'dash.myProducts', tab: 'products', icon: Package },
+    { tKey: 'dash.enquiries', tab: 'enquiries', icon: Inbox },
   ],
   WORKER: [
-    { label: 'Overview', tab: 'overview', icon: LayoutGrid },
-    { label: 'Browse Jobs', tab: 'jobs', icon: Briefcase },
-    { label: 'My Applications', tab: 'applications', icon: Send },
-    { label: 'My Services', tab: 'services', icon: Wrench },
+    { tKey: 'dash.overview', tab: 'overview', icon: LayoutGrid },
+    { tKey: 'dash.browseJobs', tab: 'jobs', icon: Briefcase },
+    { tKey: 'dash.myApplications', tab: 'applications', icon: Send },
+    { tKey: 'dash.myServices', tab: 'services', icon: Wrench },
   ],
   BUYER: [
-    { label: 'Overview', tab: 'overview', icon: LayoutGrid },
-    { label: 'My Requirements', tab: 'requirements', icon: ClipboardList },
-    { label: 'Browse Crops', tab: 'crops', icon: Wheat },
-    { label: 'Enquiries', tab: 'enquiries', icon: Inbox },
+    { tKey: 'dash.overview', tab: 'overview', icon: LayoutGrid },
+    { tKey: 'dash.myRequirements', tab: 'requirements', icon: ClipboardList },
+    { tKey: 'dash.browseCrops', tab: 'crops', icon: Wheat },
+    { tKey: 'dash.enquiries', tab: 'enquiries', icon: Inbox },
   ],
   ADMIN: [
-    { label: 'Overview', tab: 'overview', icon: LayoutGrid },
-    { label: 'Verify Experts', tab: 'verify-experts', icon: ShieldCheck },
-    { label: 'Verify Enterprises', tab: 'verify-enterprises', icon: Store },
-    { label: 'Users', tab: 'users', icon: Users },
-    { label: 'Reports', tab: 'reports', icon: Flag },
-    { label: 'Audit Logs', tab: 'audit', icon: ScrollText },
+    { tKey: 'dash.overview', tab: 'overview', icon: LayoutGrid },
+    { tKey: 'dash.verifyExperts', tab: 'verify-experts', icon: ShieldCheck },
+    { tKey: 'dash.verifyEnterprises', tab: 'verify-enterprises', icon: Store },
+    { tKey: 'dash.users', tab: 'users', icon: Users },
+    { tKey: 'dash.reports', tab: 'reports', icon: Flag },
+    { tKey: 'dash.auditLogs', tab: 'audit', icon: ScrollText },
   ],
 }
 
@@ -80,7 +81,7 @@ type SidebarProps = {
   userName: string
   userRole: string
   avatarUrl?: string | null
-  nav: { label: string; tab: string; icon: React.ComponentType<{ className?: string }> }[]
+  nav: { tKey: string; tab: string; icon: React.ComponentType<{ className?: string }> }[]
   currentTab: string
   hasSubView: boolean
   onNav: (tab: string) => void
@@ -90,6 +91,7 @@ type SidebarProps = {
 }
 
 function SidebarContent({ userName, userRole, avatarUrl, nav, currentTab, hasSubView, onNav, onHome, onProfile, onLogout }: SidebarProps) {
+  const t = useT()
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-sidebar-border p-4">
@@ -97,7 +99,7 @@ function SidebarContent({ userName, userRole, avatarUrl, nav, currentTab, hasSub
           <img src="/logo-icon.png" alt="GoviSahana logo" width={36} height={36} className="h-9 w-9 shrink-0" />
           <div className="leading-none text-left">
             <div className="text-base font-bold text-sidebar-foreground">GoviSahana</div>
-            <div className="text-[10px] text-sidebar-foreground/60">Dashboard</div>
+            <div className="text-[10px] text-sidebar-foreground/60">{t('nav.dashboard')}</div>
           </div>
         </button>
       </div>
@@ -122,17 +124,17 @@ function SidebarContent({ userName, userRole, avatarUrl, nav, currentTab, hasSub
               currentTab === item.tab && !hasSubView ? 'bg-sidebar-primary text-sidebar-primary-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
             )}
           >
-            <item.icon className="h-4 w-4" /> {item.label}
+            <item.icon className="h-4 w-4" /> {t(item.tKey)}
           </button>
         ))}
       </nav>
 
       <div className="space-y-1 border-t border-sidebar-border p-3">
         <button onClick={onProfile} className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-          <Settings className="h-4 w-4" /> Profile & Settings
+          <Settings className="h-4 w-4" /> {t('dash.profileSettings')}
         </button>
         <button onClick={onLogout} className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50">
-          <LogOut className="h-4 w-4" /> Sign out
+          <LogOut className="h-4 w-4" /> {t('nav.signOut')}
         </button>
       </div>
     </div>
@@ -142,6 +144,7 @@ function SidebarContent({ userName, userRole, avatarUrl, nav, currentTab, hasSub
 export default function DashboardShell() {
   const { user, setView, logout } = useAppStore()
   const dash = useDashboard()
+  const t = useT()
 
   if (!user) return null
 
@@ -162,7 +165,7 @@ export default function DashboardShell() {
   const sidebarProps: SidebarProps = {
     userName: user.name, userRole: user.role, avatarUrl: user.avatarUrl,
     nav, currentTab: dash.tab, hasSubView: !!dash.subView,
-    onNav: (t) => { dash.setTab(t); dash.closeSubView() },
+    onNav: (tab) => { dash.setTab(tab); dash.closeSubView() },
     onHome: () => setView('home'),
     onProfile: () => setView('onboarding'),
     onLogout: () => logout(),
@@ -187,7 +190,7 @@ export default function DashboardShell() {
               <SidebarContent {...sidebarProps} />
             </SheetContent>
           </Sheet>
-          <span className="text-sm font-semibold">{nav.find((n) => n.tab === dash.tab)?.label || 'Dashboard'}</span>
+          <span className="text-sm font-semibold">{nav.find((n) => n.tab === dash.tab) ? t(nav.find((n) => n.tab === dash.tab)!.tKey) : t('nav.dashboard')}</span>
           <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setView('home')}><Bell className="h-4 w-4" /></Button>
         </div>
         <main className="flex-1 p-4 sm:p-6">

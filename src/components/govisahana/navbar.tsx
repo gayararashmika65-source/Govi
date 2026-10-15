@@ -15,21 +15,24 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ROLE_LABELS } from '@/lib/types'
+import { useT } from '@/lib/use-t'
+import { ThemeToggle } from '@/components/theme-toggle'
+import { LanguageSwitcher } from '@/components/language-switcher'
 import type { View } from '@/lib/store'
 
-const PUBLIC_LINKS: { label: string; view: View }[] = [
-  { label: 'Home', view: 'home' },
-  { label: 'Find Experts', view: 'experts' },
-  { label: 'Knowledge Hub', view: 'knowledge' },
-  { label: 'Marketplace', view: 'marketplace' },
-  { label: 'Crop Listings', view: 'crops' },
-  { label: 'Jobs & Services', view: 'jobs' },
-  { label: 'Buyers', view: 'buyer-requirements' },
+const PUBLIC_LINKS: { tKey: string; view: View }[] = [
+  { tKey: 'nav.home', view: 'home' },
+  { tKey: 'nav.findExperts', view: 'experts' },
+  { tKey: 'nav.knowledge', view: 'knowledge' },
+  { tKey: 'nav.marketplace', view: 'marketplace' },
+  { tKey: 'nav.crops', view: 'crops' },
+  { tKey: 'nav.jobs', view: 'jobs' },
+  { tKey: 'nav.buyers', view: 'buyer-requirements' },
 ]
 
-const MORE_LINKS: { label: string; view: View }[] = [
-  { label: 'About Us', view: 'about' },
-  { label: 'Contact Us', view: 'contact' },
+const MORE_LINKS: { tKey: string; view: View }[] = [
+  { tKey: 'nav.about', view: 'about' },
+  { tKey: 'nav.contact', view: 'contact' },
 ]
 
 function initials(name: string) {
@@ -38,6 +41,7 @@ function initials(name: string) {
 
 export function Navbar() {
   const { user, view, setView, logout } = useApp()
+  const t = useT()
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [moreOpen, setMoreOpen] = useState(false)
@@ -74,7 +78,7 @@ export function Navbar() {
           <span className="flex flex-col leading-none text-left">
             <span className="text-base font-bold tracking-tight text-foreground">GoviSahana</span>
             <span className="hidden text-[10px] font-medium uppercase tracking-wider text-muted-foreground sm:block">
-              Agriculture, Connected
+              {t('brand.tagline')}
             </span>
           </span>
         </button>
@@ -90,29 +94,31 @@ export function Navbar() {
                 view === l.view ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
               )}
             >
-              {l.label}
+              {t(l.tKey)}
             </button>
           ))}
           <DropdownMenu open={moreOpen} onOpenChange={setMoreOpen}>
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground">
-                More <ChevronDown className="h-3.5 w-3.5" />
+                {t('nav.more')} <ChevronDown className="h-3.5 w-3.5" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               {MORE_LINKS.map((l) => (
                 <DropdownMenuItem key={l.view} onClick={() => nav(l.view)}>
-                  {l.label}
+                  {t(l.tKey)}
                 </DropdownMenuItem>
               ))}
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => nav('privacy')}>Privacy Policy</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => nav('terms')}>Terms & Conditions</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => nav('privacy')}>{t('nav.privacy')}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => nav('terms')}>{t('nav.terms')}</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </nav>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
+          <LanguageSwitcher className="hidden sm:flex" />
+          <ThemeToggle />
           {user ? <NotificationsBell /> : null}
 
           {user ? (
@@ -140,31 +146,31 @@ export function Navbar() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => setView('dashboard')}>
-                  <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
+                  <LayoutDashboard className="mr-2 h-4 w-4" /> {t('nav.dashboard')}
                 </DropdownMenuItem>
                 {user.role === 'EXPERT' && (
                   <DropdownMenuItem onClick={() => setView('onboarding')}>
-                    <ShieldCheck className="mr-2 h-4 w-4" /> Verification & Profile
+                    <ShieldCheck className="mr-2 h-4 w-4" /> {t('nav.verification')}
                   </DropdownMenuItem>
                 )}
                 {user.role !== 'EXPERT' && (
                   <DropdownMenuItem onClick={() => setView('onboarding')}>
-                    <UserIcon className="mr-2 h-4 w-4" /> My Profile
+                    <UserIcon className="mr-2 h-4 w-4" /> {t('nav.profile')}
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => logout()} className="text-rose-600 focus:text-rose-700">
-                  <LogOut className="mr-2 h-4 w-4" /> Sign out
+                  <LogOut className="mr-2 h-4 w-4" /> {t('nav.signOut')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
             <>
               <Button variant="ghost" size="sm" className="hidden sm:inline-flex" onClick={() => nav('login')}>
-                Log in
+                {t('nav.signIn')}
               </Button>
               <Button size="sm" onClick={() => nav('register')} className="bg-primary hover:bg-primary/90">
-                Get Started
+                {t('nav.getStarted')}
               </Button>
             </>
           )}
@@ -191,16 +197,21 @@ export function Navbar() {
                       view === l.view ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted',
                     )}
                   >
-                    {l.label}
+                    {t(l.tKey)}
                   </button>
                 ))}
                 <div className="my-2 border-t" />
-                <button onClick={() => nav('privacy')} className="rounded-lg px-3 py-2 text-left text-sm text-muted-foreground hover:bg-muted">Privacy Policy</button>
-                <button onClick={() => nav('terms')} className="rounded-lg px-3 py-2 text-left text-sm text-muted-foreground hover:bg-muted">Terms & Conditions</button>
+                <button onClick={() => nav('privacy')} className="rounded-lg px-3 py-2 text-left text-sm text-muted-foreground hover:bg-muted">{t('nav.privacy')}</button>
+                <button onClick={() => nav('terms')} className="rounded-lg px-3 py-2 text-left text-sm text-muted-foreground hover:bg-muted">{t('nav.terms')}</button>
+                <div className="my-2 border-t" />
+                <div className="flex items-center gap-2 px-3 py-1">
+                  <LanguageSwitcher />
+                  <ThemeToggle />
+                </div>
                 {!user && (
                   <div className="mt-3 flex flex-col gap-2">
-                    <Button variant="outline" onClick={() => nav('login')}>Log in</Button>
-                    <Button onClick={() => nav('register')} className="bg-primary">Get Started</Button>
+                    <Button variant="outline" onClick={() => nav('login')}>{t('nav.signIn')}</Button>
+                    <Button onClick={() => nav('register')} className="bg-primary">{t('nav.getStarted')}</Button>
                   </div>
                 )}
               </nav>

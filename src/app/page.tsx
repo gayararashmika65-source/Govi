@@ -28,7 +28,14 @@ import RegisterView from '@/components/govisahana/views/register'
 import OnboardingView from '@/components/govisahana/views/onboarding'
 
 export default function Home() {
-  const { view, user, loading, refreshUser, setView } = useApp()
+  const { view, user, loading, refreshUser, setView, lang } = useApp()
+
+  // Update <html lang> to match the chosen language (accessibility / screen readers)
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.lang = lang === 'si' ? 'si' : lang === 'ta' ? 'ta' : 'en'
+    }
+  }, [lang])
 
   useEffect(() => {
     refreshUser()

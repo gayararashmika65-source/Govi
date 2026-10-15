@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { api, useApp } from '@/lib/store'
+import { useT } from '@/lib/use-t'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -42,6 +43,7 @@ export default function FarmerDashboard({ dash }: { dash: DashboardState }) {
 
 function OverviewView({ dash }: { dash: DashboardState }) {
   const { user, setView } = useApp()
+  const t = useT()
   const [stats, setStats] = useState({ cases: 0, open: 0, resolved: 0, crops: 0, consultations: 0 })
   const [recent, setRecent] = useState<Case[]>([])
 
@@ -59,7 +61,7 @@ function OverviewView({ dash }: { dash: DashboardState }) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Ayubowan, {user?.name.split(' ')[0]} 👋</h1>
+        <h1 className="text-2xl font-bold">{t('dash.greeting')}, {user?.name.split(' ')[0]} 👋</h1>
         <p className="text-sm text-muted-foreground">Here&apos;s an overview of your farming activity on GoviSahana.</p>
       </div>
 

@@ -2,6 +2,7 @@
 // Only the `/` route is user-visible, so views are switched via client state.
 import { create } from 'zustand'
 import type { Role } from '@/lib/types'
+import type { Lang } from '@/lib/i18n'
 
 export type SessionUser = {
   id: string
@@ -28,12 +29,17 @@ type AppState = {
   loading: boolean
   view: View
   viewParam: string | null  // id or context for a view (e.g. expert id, article id)
+  lang: Lang
   prevView: View | null
 
   setView: (v: View, param?: string | null) => void
   setUser: (u: SessionUser | null) => void
   refreshUser: () => Promise<void>
   logout: () => Promise<void>
+
+  // language
+  lang: Lang
+  setLang: (l: Lang) => void
 
   // navigation helpers
   goHome: () => void
@@ -53,17 +59,35 @@ async function api<T = unknown>(path: string, init?: RequestInit): Promise<T> {
 
 export { api }
 
+// Read persisted language once at init (safe for SSR — window only on client)
+function getInitialLang(): Lang {
+  if (typeof window === 'undefined') return 'en'
+  const stored = window.localStorage.getItem('gs_lang')
+  if (stored === 'en' || stored === 'si' || stored === 'ta') return stored
+  // Detect from browser language
+  const bl = window.navigator.language.toLowerCase()
+  if (bl.startsWith('si')) return 'si'
+  if (bl.startsWith('ta')) return 'ta'
+  return 'en'
+}
+
 export const useApp = create<AppState>((set, get) => ({
   user: null,
   loading: true,
   view: 'home',
   viewParam: null,
   prevView: null,
+  lang: getInitialLang(),
 
   setView: (v, param = null) =>
     set((s) => ({ view: v, viewParam: param, prevView: s.view === v ? s.prevView : s.view })),
 
   setUser: (u) => set({ user: u, loading: false }),
+
+  setLang: (l) => {
+    if (typeof window !== 'undefined') window.localStorage.setItem('gs_lang', l)
+    set({ lang: l })
+  },
 
   refreshUser: async () => {
     try {
