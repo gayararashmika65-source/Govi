@@ -140,7 +140,7 @@ export function Navbar() {
                     <span className="font-medium">{user.name}</span>
                     <span className="text-xs font-normal text-muted-foreground">{user.email}</span>
                     <span className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-primary">
-                      {ROLE_LABELS[user.role as keyof typeof ROLE_LABELS] || user.role}
+                      {t('role.' + user.role)}
                     </span>
                   </div>
                 </DropdownMenuLabel>
@@ -225,6 +225,7 @@ export function Navbar() {
 
 function NotificationsBell() {
   const { setView } = useApp()
+  const t = useT()
   const [items, setItems] = useState<{ id: string; title: string; body: string; read: boolean; link?: string | null }[]>([])
   const [unread, setUnread] = useState(0)
   const [open, setOpen] = useState(false)
@@ -240,8 +241,8 @@ function NotificationsBell() {
 
   useEffect(() => {
     load()
-    const t = setInterval(load, 25000)
-    return () => clearInterval(t)
+    const timer = setInterval(load, 25000)
+    return () => clearInterval(timer)
   }, [])
 
   const markAll = async () => {
@@ -252,7 +253,7 @@ function NotificationsBell() {
   return (
     <DropdownMenu open={open} onOpenChange={(o) => { setOpen(o); if (o) load() }}>
       <DropdownMenuTrigger asChild>
-        <button className="relative flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card hover:bg-muted" aria-label="Notifications">
+        <button className="relative flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card hover:bg-muted" aria-label={t('nav.notifications')}>
           <Bell className="h-4.5 w-4.5 text-muted-foreground" />
           {unread > 0 && (
             <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white">
@@ -263,14 +264,14 @@ function NotificationsBell() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80 p-0">
         <div className="flex items-center justify-between border-b px-3 py-2.5">
-          <span className="text-sm font-semibold">Notifications</span>
+          <span className="text-sm font-semibold">{t('nav.notifications')}</span>
           {unread > 0 && (
-            <button onClick={markAll} className="text-xs font-medium text-primary hover:underline">Mark all read</button>
+            <button onClick={markAll} className="text-xs font-medium text-primary hover:underline">{t('nav.markAllRead')}</button>
           )}
         </div>
         <div className="gs-scroll max-h-96 overflow-y-auto">
           {items.length === 0 ? (
-            <div className="px-3 py-8 text-center text-sm text-muted-foreground">No notifications yet</div>
+            <div className="px-3 py-8 text-center text-sm text-muted-foreground">{t('nav.noNotifications')}</div>
           ) : items.slice(0, 20).map((n) => (
             <button
               key={n.id}

@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useApp, api } from '@/lib/store'
+import { useT } from '@/lib/use-t'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -37,6 +38,7 @@ const ROLE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = 
 
 export default function RegisterView() {
   const { setView, refreshUser } = useApp()
+  const t = useT()
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [role, setRole] = useState<string>('')
   const [form, setForm] = useState({ name: '', email: '', password: '', phone: '' })
@@ -175,7 +177,7 @@ export default function RegisterView() {
         }}
         className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft className="h-4 w-4" /> Back
+        <ArrowLeft className="h-4 w-4" /> {t('common.back')}
       </button>
 
       {/* Progress step indicator */}
@@ -189,7 +191,7 @@ export default function RegisterView() {
           {step > 1 ? <Check className="h-3.5 w-3.5" /> : '1'}
         </span>
         <span className={cn(step === 1 ? 'font-medium text-foreground' : 'text-muted-foreground')}>
-          Role
+          {t('auth.stepRole')}
         </span>
 
         <span className="mx-1 h-px w-6 bg-border sm:w-8" />
@@ -203,7 +205,7 @@ export default function RegisterView() {
           {step > 2 ? <Check className="h-3.5 w-3.5" /> : '2'}
         </span>
         <span className={cn(step === 2 ? 'font-medium text-foreground' : 'text-muted-foreground')}>
-          Details
+          {t('auth.stepDetails')}
         </span>
 
         <span className="mx-1 h-px w-6 bg-border sm:w-8" />
@@ -217,7 +219,7 @@ export default function RegisterView() {
           3
         </span>
         <span className={cn(step === 3 ? 'font-medium text-foreground' : 'text-muted-foreground')}>
-          Verify Email
+          {t('auth.stepVerifyEmail')}
         </span>
       </div>
 
@@ -226,10 +228,9 @@ export default function RegisterView() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <img src="/logo-icon.png" alt="GoviSahana logo" width={24} height={24} className="h-6 w-6" /> Join
-              GoviSahana
+              <img src="/logo-icon.png" alt="GoviSahana logo" width={24} height={24} className="h-6 w-6" /> {t('auth.joinGoviSahana')}
             </CardTitle>
-            <CardDescription>Select the option that best describes you. Farmer registration is always free.</CardDescription>
+            <CardDescription>{t('auth.chooseRoleDesc')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-2">
@@ -252,20 +253,20 @@ export default function RegisterView() {
                     >
                       <Icon className="h-5 w-5" />
                     </span>
-                    <span className="font-semibold">{r.label}</span>
-                    <span className="text-xs text-muted-foreground">{r.desc}</span>
+                    <span className="font-semibold">{t('role.' + r.value)}</span>
+                    <span className="text-xs text-muted-foreground">{t('role.' + r.value + '.desc')}</span>
                   </button>
                 )
               })}
             </div>
-            <p className="text-xs text-muted-foreground">Administrators are provisioned separately and cannot self-register.</p>
+            <p className="text-xs text-muted-foreground">{t('auth.adminNote')}</p>
             <Button disabled={!role} onClick={() => setStep(2)} className="w-full bg-primary hover:bg-primary/90">
-              Continue
+              {t('auth.continue')}
             </Button>
             <div className="text-center text-sm text-muted-foreground">
-              Already have an account?{' '}
+              {t('auth.alreadyAccount')}{' '}
               <button type="button" onClick={() => setView('login')} className="font-medium text-primary hover:underline">
-                Log in
+                {t('auth.logIn')}
               </button>
             </div>
           </CardContent>
@@ -276,16 +277,16 @@ export default function RegisterView() {
       {step === 2 && (
         <Card>
           <CardHeader>
-            <CardTitle>Create your account</CardTitle>
+            <CardTitle>{t('auth.createAccount')}</CardTitle>
             <CardDescription>
-              Registering as{' '}
-              <span className="font-medium text-primary">{ROLE_OPTIONS.find((r) => r.value === role)?.label}</span>
+              {t('auth.registeringAs')}{' '}
+              <span className="font-medium text-primary">{t('role.' + role)}</span>
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSendOtp} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Full name</Label>
+                <Label htmlFor="name">{t('auth.fullName')}</Label>
                 <div className="relative">
                   <UserIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
@@ -302,7 +303,7 @@ export default function RegisterView() {
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email address</Label>
+                  <Label htmlFor="email">{t('auth.email')}</Label>
                   <div className="relative">
                     <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
@@ -319,7 +320,7 @@ export default function RegisterView() {
 
                 <div className="space-y-2">
                   <Label htmlFor="phone">
-                    Phone <span className="text-muted-foreground">(optional)</span>
+                    {t('auth.phone')} <span className="text-muted-foreground">({t('common.optional')})</span>
                   </Label>
                   <div className="relative">
                     <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -335,7 +336,7 @@ export default function RegisterView() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t('auth.password')}</Label>
                 <div className="relative">
                   <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
@@ -343,36 +344,36 @@ export default function RegisterView() {
                     type="password"
                     value={form.password}
                     onChange={(e) => set('password', e.target.value)}
-                    placeholder="At least 6 characters"
+                    placeholder={t('auth.passwordMin')}
                     className="pl-9"
                     required
                     minLength={6}
                   />
                 </div>
-                <p className="text-xs text-muted-foreground">You will use this password to sign in after verification.</p>
+                <p className="text-xs text-muted-foreground">{t('auth.passwordHint')}</p>
               </div>
 
               <p className="text-xs text-muted-foreground">
-                By continuing you agree to our{' '}
+                {t('auth.agree')}{' '}
                 <button type="button" onClick={() => setView('terms')} className="text-primary hover:underline">
-                  Terms
+                  {t('auth.terms')}
                 </button>{' '}
-                and{' '}
+                {t('auth.and')}{' '}
                 <button type="button" onClick={() => setView('privacy')} className="text-primary hover:underline">
-                  Privacy Policy
+                  {t('auth.privacyPolicy')}
                 </button>
                 .
               </p>
 
               <Button type="submit" disabled={sendingOtp} className="w-full bg-primary hover:bg-primary/90">
                 {sendingOtp ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                {sendingOtp ? 'Sending verification code…' : 'Continue to Email Verification'}
+                {sendingOtp ? t('auth.sendingCode') : t('auth.continueToVerify')}
               </Button>
 
               <div className="text-center text-sm text-muted-foreground">
-                Already have an account?{' '}
+                {t('auth.alreadyAccount')}{' '}
                 <button type="button" onClick={() => setView('login')} className="font-medium text-primary hover:underline">
-                  Log in
+                  {t('auth.logIn')}
                 </button>
               </div>
             </form>
@@ -387,10 +388,9 @@ export default function RegisterView() {
             <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
               <KeyRound className="h-6 w-6" />
             </div>
-            <CardTitle>Verify Your Email</CardTitle>
+            <CardTitle>{t('auth.verifyEmailTitle')}</CardTitle>
             <CardDescription className="max-w-md mx-auto">
-              We have sent a 6-digit verification code to <span className="font-semibold text-foreground">{form.email}</span>.
-              Please check your inbox (and spam folder) and enter it below.
+              {t('auth.verifyEmailDesc')} <span className="font-semibold text-foreground">{form.email}</span>. {t('auth.verifyEmailInstruction')}
             </CardDescription>
           </CardHeader>
 
@@ -398,10 +398,10 @@ export default function RegisterView() {
             {simulatedNotice && (
               <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-center">
                 <p className="text-xs font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">
-                  Resend Free Tier Testing Mode
+                  Sandbox Mode OTP
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Resend free tier only sends emails to the account owner (<code className="font-mono text-foreground font-semibold">ngrashmika1@gmail.com</code>). For testing with other emails, use this code:
+                  Sandbox verification code for testing:
                 </p>
                 <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
                   <span className="font-mono text-xl font-bold tracking-widest text-amber-900 dark:text-amber-200 bg-amber-500/20 px-3 py-1 rounded-md border border-amber-500/30">
@@ -417,7 +417,7 @@ export default function RegisterView() {
                       verifyAndRegister(simulatedNotice)
                     }}
                   >
-                    Auto-fill & Complete
+                    {t('auth.autoFill')}
                   </Button>
                 </div>
               </div>
@@ -434,7 +434,7 @@ export default function RegisterView() {
                   <InputOTPSlot index={5} className="h-12 w-11 text-lg font-semibold" />
                 </InputOTPGroup>
               </InputOTP>
-              <p className="text-xs text-muted-foreground">Enter the 6-digit code received via Resend</p>
+              <p className="text-xs text-muted-foreground">{t('auth.enterCodeHint')}</p>
             </div>
 
             <Button
@@ -444,7 +444,7 @@ export default function RegisterView() {
               className="w-full bg-primary hover:bg-primary/90"
             >
               {verifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-              {verifying ? 'Verifying & Creating Account…' : 'Verify & Complete Registration'}
+              {verifying ? t('auth.verifyingAccount') : t('auth.verifyAndComplete')}
             </Button>
 
             <div className="flex flex-col items-center justify-between gap-3 pt-2 text-sm sm:flex-row">
@@ -453,7 +453,7 @@ export default function RegisterView() {
                 onClick={() => setStep(2)}
                 className="text-xs text-muted-foreground hover:text-foreground hover:underline"
               >
-                Wrong email? Change details
+                {t('auth.wrongEmailChange')}
               </button>
 
               <button
@@ -466,7 +466,7 @@ export default function RegisterView() {
                 )}
               >
                 <RotateCcw className={cn('h-3.5 w-3.5', sendingOtp && 'animate-spin')} />
-                {countdown > 0 ? `Resend code in ${countdown}s` : 'Resend code'}
+                {countdown > 0 ? `${t('auth.resendCodeIn')} ${countdown}s` : t('auth.resendCode')}
               </button>
             </div>
           </CardContent>

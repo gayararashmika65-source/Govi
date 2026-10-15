@@ -87,6 +87,7 @@ export default function Home() {
            view === 'register' ? <RegisterView /> :
            <WelcomeScreen />}
         </main>
+        {view === 'home' && <Footer />}
       </div>
     )
   }

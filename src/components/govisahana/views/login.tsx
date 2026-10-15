@@ -168,10 +168,10 @@ export default function LoginView() {
       <div className="mb-6 flex flex-col items-center text-center">
         <img src="/logo-icon.png" alt="GoviSahana logo" width={64} height={64} className="h-16 w-16" />
         <h1 className="mt-4 text-2xl font-bold">
-          {mode === 'login' ? t('auth.welcomeBack') : 'Reset Password'}
+          {mode === 'login' ? t('auth.welcomeBack') : t('auth.resetPassword')}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {mode === 'login' ? t('auth.signInSubtitle') : 'Verify your email to create a new password'}
+          {mode === 'login' ? t('auth.signInSubtitle') : t('auth.resetSubtitle')}
         </p>
       </div>
 
@@ -213,7 +213,7 @@ export default function LoginView() {
                     }}
                     className="text-xs font-medium text-primary hover:underline"
                   >
-                    Forgot password?
+                    {t('auth.forgotPassword')}
                   </button>
                 </div>
                 <div className="relative">
@@ -253,16 +253,16 @@ export default function LoginView() {
               onClick={() => setMode('login')}
               className="mb-2 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
             >
-              <ArrowLeft className="h-3.5 w-3.5" /> Back to sign in
+              <ArrowLeft className="h-3.5 w-3.5" /> {t('auth.backToSignIn')}
             </button>
             <CardTitle className="flex items-center gap-2">
               <KeyRound className="h-5 w-5 text-primary" />
-              {resetStep === 1 ? 'Find your account' : 'Set new password'}
+              {resetStep === 1 ? t('auth.findAccount') : t('auth.setNewPassword')}
             </CardTitle>
             <CardDescription>
               {resetStep === 1
-                ? "Enter your registered email address and we'll send you an OTP verification code."
-                : `Enter the 6-digit code sent to ${resetEmail} and choose a new password.`}
+                ? t('auth.findAccountDesc')
+                : t('auth.setNewPasswordDesc')}
             </CardDescription>
           </CardHeader>
 
@@ -270,7 +270,7 @@ export default function LoginView() {
             {resetStep === 1 ? (
               <form onSubmit={handleSendResetOtp} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="reset-email">Your email address</Label>
+                  <Label htmlFor="reset-email">{t('auth.email')}</Label>
                   <div className="relative">
                     <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
@@ -287,7 +287,7 @@ export default function LoginView() {
 
                 <Button type="submit" disabled={resetLoading} className="w-full bg-primary hover:bg-primary/90">
                   {resetLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  {resetLoading ? 'Sending code…' : 'Send Verification Code'}
+                  {resetLoading ? t('auth.sendingResetCode') : t('auth.sendVerificationCode')}
                 </Button>
               </form>
             ) : (
@@ -306,14 +306,14 @@ export default function LoginView() {
                         className="h-6 text-xs border-amber-500/40"
                         onClick={() => setOtp(simulatedNotice)}
                       >
-                        Auto-fill
+                        {t('auth.autoFill')}
                       </Button>
                     </div>
                   </div>
                 )}
 
                 <div className="flex flex-col items-center justify-center space-y-2">
-                  <Label className="text-xs text-muted-foreground">6-Digit Verification Code</Label>
+                  <Label className="text-xs text-muted-foreground">{t('auth.sixDigitCode')}</Label>
                   <InputOTP maxLength={6} value={otp} onChange={(val) => setOtp(val)} disabled={resetLoading}>
                     <InputOTPGroup className="gap-2">
                       <InputOTPSlot index={0} className="h-11 w-10 text-base font-semibold" />
@@ -327,7 +327,7 @@ export default function LoginView() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="new-password">New password</Label>
+                  <Label htmlFor="new-password">{t('auth.newPassword')}</Label>
                   <div className="relative">
                     <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
@@ -335,7 +335,7 @@ export default function LoginView() {
                       type="password"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="At least 6 characters"
+                      placeholder={t('auth.passwordMin')}
                       className="pl-9"
                       required
                       minLength={6}
@@ -344,7 +344,7 @@ export default function LoginView() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirm-password">Confirm new password</Label>
+                  <Label htmlFor="confirm-password">{t('auth.confirmPassword')}</Label>
                   <div className="relative">
                     <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
@@ -352,7 +352,7 @@ export default function LoginView() {
                       type="password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Re-type password"
+                      placeholder={t('auth.confirmPasswordPlaceholder')}
                       className="pl-9"
                       required
                       minLength={6}
@@ -366,7 +366,7 @@ export default function LoginView() {
                   className="w-full bg-primary hover:bg-primary/90"
                 >
                   {resetLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                  {resetLoading ? 'Resetting Password…' : 'Reset Password & Sign In'}
+                  {resetLoading ? t('auth.resettingPassword') : t('auth.resetPasswordAndSignIn')}
                 </Button>
 
                 <div className="flex items-center justify-between pt-1 text-xs text-muted-foreground">
@@ -375,7 +375,7 @@ export default function LoginView() {
                     onClick={() => setResetStep(1)}
                     className="hover:text-foreground hover:underline"
                   >
-                    Change email
+                    {t('auth.changeEmail')}
                   </button>
 
                   <button
@@ -388,7 +388,7 @@ export default function LoginView() {
                     )}
                   >
                     <RotateCcw className={cn('h-3 w-3', resetLoading && 'animate-spin')} />
-                    {countdown > 0 ? `Resend in ${countdown}s` : 'Resend code'}
+                    {countdown > 0 ? `${t('auth.resendCodeIn')} ${countdown}s` : t('auth.resendCode')}
                   </button>
                 </div>
               </form>

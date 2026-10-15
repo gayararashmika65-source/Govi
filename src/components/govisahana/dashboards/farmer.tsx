@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { api, useApp } from '@/lib/store'
-import { useT } from '@/lib/use-t'
+import { useT, useLang } from '@/lib/use-t'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -43,6 +43,7 @@ export default function FarmerDashboard({ dash }: { dash: DashboardState }) {
 
 function OverviewView({ dash }: { dash: DashboardState }) {
   const { user, setView } = useApp()
+  const { lang } = useLang()
   const t = useT()
   const [stats, setStats] = useState({ cases: 0, open: 0, resolved: 0, crops: 0, consultations: 0 })
   const [recent, setRecent] = useState<Case[]>([])
@@ -62,25 +63,27 @@ function OverviewView({ dash }: { dash: DashboardState }) {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">{t('dash.greeting')}, {user?.name.split(' ')[0]} 👋</h1>
-        <p className="text-sm text-muted-foreground">Here&apos;s an overview of your farming activity on GoviSahana.</p>
+        <p className="text-sm text-muted-foreground">
+          {lang === 'si' ? 'ගොවිසහාන හි ඔබගේ කෘෂිකාර්මික ක්‍රියාකාරකම් පිළිබඳ දළ විශ්ලේෂණය මෙන්න.' : lang === 'ta' ? 'கோவிசஹானாவில் உங்கள் விவசாய செயல்பாடுகளின் கண்ணோட்டம் இங்கே.' : "Here's an overview of your farming activity on GoviSahana."}
+        </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total cases" value={stats.cases} icon={<Stethoscope className="h-4 w-4" />} tone="green" />
-        <StatCard label="Open cases" value={stats.open} icon={<Inbox className="h-4 w-4" />} tone="amber" />
-        <StatCard label="Resolved" value={stats.resolved} icon={<CheckCircle2 className="h-4 w-4" />} tone="green" />
-        <StatCard label="Crop listings" value={stats.crops} icon={<Wheat className="h-4 w-4" />} tone="blue" />
+        <StatCard label={lang === 'si' ? 'මුළු ගැටලු' : lang === 'ta' ? 'மொத்த பிரச்சினைகள்' : 'Total cases'} value={stats.cases} icon={<Stethoscope className="h-4 w-4" />} tone="green" />
+        <StatCard label={lang === 'si' ? 'විවෘත ගැටලු' : lang === 'ta' ? 'திறந்த பிரச்சினைகள்' : 'Open cases'} value={stats.open} icon={<Inbox className="h-4 w-4" />} tone="amber" />
+        <StatCard label={lang === 'si' ? 'විසඳන ලද' : lang === 'ta' ? 'தீர்க்கப்பட்டவை' : 'Resolved'} value={stats.resolved} icon={<CheckCircle2 className="h-4 w-4" />} tone="green" />
+        <StatCard label={t('dash.myCrops')} value={stats.crops} icon={<Wheat className="h-4 w-4" />} tone="blue" />
       </div>
 
       <div className="grid gap-5 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-base">Recent cases</CardTitle>
-            <Button size="sm" variant="outline" onClick={() => dash.setTab('cases')}>View all</Button>
+            <CardTitle className="text-base">{lang === 'si' ? 'මෑත ගැටලු' : lang === 'ta' ? 'சமீபத்திய பிரச்சினைகள்' : 'Recent cases'}</CardTitle>
+            <Button size="sm" variant="outline" onClick={() => dash.setTab('cases')}>{t('common.viewAll')}</Button>
           </CardHeader>
           <CardContent className="space-y-2">
             {recent.length === 0 ? (
-              <EmptyState icon={<Stethoscope className="h-5 w-5" />} title="No cases yet" description="Report a crop problem to get expert advice." action={<Button onClick={() => dash.setTab('create')}><Plus className="mr-2 h-4 w-4" /> Report a problem</Button>} />
+              <EmptyState icon={<Stethoscope className="h-5 w-5" />} title={lang === 'si' ? 'තවම ගැටලු නැත' : lang === 'ta' ? 'இன்னும் பிரச்சினைகள் இல்லை' : 'No cases yet'} description={lang === 'si' ? 'විශේෂඥ උපදෙස් ලබා ගැනීමට බෝග ගැටලුවක් වාර්තා කරන්න.' : lang === 'ta' ? 'நிபுணர் ஆலோசனையைப் பெற பயிர் பிரச்சினையைப் புகாரளிக்கவும்.' : 'Report a crop problem to get expert advice.'} action={<Button onClick={() => dash.setTab('create')}><Plus className="mr-2 h-4 w-4" /> {t('dash.reportProblem')}</Button>} />
             ) : recent.map((c) => (
               <button key={c.id} onClick={() => dash.openSubView('case-detail', c.id)} className="flex w-full items-center gap-3 rounded-lg border border-border p-3 text-left hover:bg-muted/50">
                 <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary"><Sprout className="h-4 w-4" /></span>
@@ -95,12 +98,12 @@ function OverviewView({ dash }: { dash: DashboardState }) {
         </Card>
 
         <Card>
-          <CardHeader><CardTitle className="text-base">Quick actions</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base">{lang === 'si' ? 'ක්ෂණික ක්‍රියා' : lang === 'ta' ? 'விரைவு நடவடிக்கைகள்' : 'Quick actions'}</CardTitle></CardHeader>
           <CardContent className="space-y-2">
-            <Button className="w-full justify-start" onClick={() => dash.setTab('create')}><Plus className="mr-2 h-4 w-4" /> Report a crop problem</Button>
-            <Button variant="outline" className="w-full justify-start" onClick={() => dash.setTab('experts')}><Search className="mr-2 h-4 w-4" /> Find an expert</Button>
-            <Button variant="outline" className="w-full justify-start" onClick={() => dash.setTab('crops')}><Wheat className="mr-2 h-4 w-4" /> List a crop for sale</Button>
-            <Button variant="outline" className="w-full justify-start" onClick={() => setView('marketplace')}><Tag className="mr-2 h-4 w-4" /> Buy agri products</Button>
+            <Button className="w-full justify-start" onClick={() => dash.setTab('create')}><Plus className="mr-2 h-4 w-4" /> {t('dash.reportProblem')}</Button>
+            <Button variant="outline" className="w-full justify-start" onClick={() => dash.setTab('experts')}><Search className="mr-2 h-4 w-4" /> {t('dash.findExperts')}</Button>
+            <Button variant="outline" className="w-full justify-start" onClick={() => dash.setTab('crops')}><Wheat className="mr-2 h-4 w-4" /> {lang === 'si' ? 'අස්වැන්නක් විකිණීමට එක් කරන්න' : lang === 'ta' ? 'பயிரை விற்பனைக்கு பட்டியலிடுக' : 'List a crop for sale'}</Button>
+            <Button variant="outline" className="w-full justify-start" onClick={() => setView('marketplace')}><Tag className="mr-2 h-4 w-4" /> {lang === 'si' ? 'කෘෂි නිෂ්පාදන මිලදී ගන්න' : lang === 'ta' ? 'வேளாண் பொருட்களை வாங்குங்கள்' : 'Buy agri products'}</Button>
           </CardContent>
         </Card>
       </div>
@@ -109,6 +112,8 @@ function OverviewView({ dash }: { dash: DashboardState }) {
 }
 
 function CasesView({ farmerId, onOpen, onCreate }: { farmerId: string; onOpen: (id: string) => void; onCreate: () => void }) {
+  const { lang } = useLang()
+  const t = useT()
   const [cases, setCases] = useState<Case[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
@@ -122,8 +127,11 @@ function CasesView({ farmerId, onOpen, onCreate }: { farmerId: string; onOpen: (
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div><h1 className="text-2xl font-bold">My Cases</h1><p className="text-sm text-muted-foreground">Track all your agricultural problems and expert advice.</p></div>
-        <Button onClick={onCreate}><Plus className="mr-2 h-4 w-4" /> Report a problem</Button>
+        <div>
+          <h1 className="text-2xl font-bold">{t('dash.myCases')}</h1>
+          <p className="text-sm text-muted-foreground">{lang === 'si' ? 'ඔබගේ සියලු කෘෂිකාර්මික ගැටලු සහ විශේෂඥ උපදෙස් නිරීක්ෂණය කරන්න.' : lang === 'ta' ? 'உங்கள் அனைத்து விவசாயப் பிரச்சினைகளையும் நிபுணர் ஆலோசனைகளையும் கண்காணியுங்கள்.' : 'Track all your agricultural problems and expert advice.'}</p>
+        </div>
+        <Button onClick={onCreate}><Plus className="mr-2 h-4 w-4" /> {t('dash.reportProblem')}</Button>
       </div>
       <div className="flex flex-wrap gap-1.5">
         {['all', 'OPEN', 'UNDER_REVIEW', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'].map((f) => (

@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useApp } from '@/lib/store'
+import { useT, useLang } from '@/lib/use-t'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -39,6 +40,8 @@ const GRADE_TONES: Record<string, string> = {
 
 export default function CropsView() {
   const { openDetail, setView } = useApp()
+  const { lang } = useLang()
+  const t = useT()
   const [crops, setCrops] = useState<Crop[]>([])
   const [loading, setLoading] = useState(true)
   const [q, setQ] = useState('')
@@ -61,13 +64,13 @@ export default function CropsView() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
       <Button variant="ghost" size="sm" onClick={() => setView('home')} className="mb-4 text-muted-foreground">
-        <ArrowLeft className="mr-2 h-4 w-4" /> Home
+        <ArrowLeft className="mr-2 h-4 w-4" /> {t('nav.home')}
       </Button>
 
       <SectionHeader
-        eyebrow="Crop Trading"
-        title="Harvests direct from Sri Lankan farmers"
-        description="Browse available crops by district, grade and harvest date. Connect directly with the grower."
+        eyebrow={lang === 'si' ? 'අස්වැන්න වෙළඳාම' : lang === 'ta' ? 'பயிர் வர்த்தகம்' : 'Crop Trading'}
+        title={lang === 'si' ? 'ශ්‍රී ලාංකික ගොවීන්ගෙන් සෘජු අස්වැන්න' : lang === 'ta' ? 'இலங்கை விவசாயிகளிடமிருந்து நேரடி அறுவடைகள்' : 'Harvests direct from Sri Lankan farmers'}
+        description={lang === 'si' ? 'දිස්ත්‍රික්කය, ශ්‍රේණිය සහ අස්වනු දිනය අනුව බෝග සොයන්න. වගාකරු හා සෘජුවම සම්බන්ධ වන්න.' : lang === 'ta' ? 'மாவட்டம், தரம் மற்றும் அறுவடை தேதி அடிப்படையில் பயிர்களை உலாவுங்கள். விவசாயியுடன் நேரடியாக இணையுங்கள்.' : 'Browse available crops by district, grade and harvest date. Connect directly with the grower.'}
       />
 
       {/* Filters */}
@@ -77,16 +80,16 @@ export default function CropsView() {
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search crop name…"
+            placeholder={lang === 'si' ? 'බෝගයේ නම සොයන්න…' : lang === 'ta' ? 'பயிர் பெயரைத் தேடுங்கள்…' : 'Search crop name…'}
             className="pl-9"
           />
         </div>
         <Select value={district} onValueChange={setDistrict}>
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="All districts" />
+            <SelectValue placeholder={lang === 'si' ? 'සියලු දිස්ත්‍රික්ක' : lang === 'ta' ? 'அனைத்து மாவட்டங்களும்' : 'All districts'} />
           </SelectTrigger>
           <SelectContent className="max-h-80">
-            <SelectItem value="all">All districts</SelectItem>
+            <SelectItem value="all">{lang === 'si' ? 'සියලු දිස්ත්‍රික්ක' : lang === 'ta' ? 'அனைத்து மாவட்டங்களும்' : 'All districts'}</SelectItem>
             {SRI_LANKAN_DISTRICTS.map((d) => (
               <SelectItem key={d} value={d}>{d}</SelectItem>
             ))}
@@ -94,10 +97,10 @@ export default function CropsView() {
         </Select>
         <Select value={crop} onValueChange={setCrop}>
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="All crops" />
+            <SelectValue placeholder={lang === 'si' ? 'සියලු බෝග' : lang === 'ta' ? 'அனைத்து பயிர்களும்' : 'All crops'} />
           </SelectTrigger>
           <SelectContent className="max-h-80">
-            <SelectItem value="all">All crops</SelectItem>
+            <SelectItem value="all">{lang === 'si' ? 'සියලු බෝග' : lang === 'ta' ? 'அனைத்து பயிர்களும்' : 'All crops'}</SelectItem>
             {COMMON_CROPS.map((c) => (
               <SelectItem key={c} value={c}>{c}</SelectItem>
             ))}
@@ -123,8 +126,8 @@ export default function CropsView() {
         ) : crops.length === 0 ? (
           <EmptyState
             icon={<ShoppingBasket className="h-6 w-6" />}
-            title="No crops listed"
-            description="Try adjusting your search or filters. Farmers can list their harvests from the dashboard."
+            title={lang === 'si' ? 'අස්වැන්න ලැයිස්තුගත කර නැත' : lang === 'ta' ? 'பயிர்கள் எதுவும் பட்டியலிடப்படவில்லை' : 'No crops listed'}
+            description={lang === 'si' ? 'සෙවුම හෝ පෙරහන් වෙනස් කර නැවත බලන්න. ගොවීන්ට ඔවුන්ගේ අස්වැන්න උපකරණ පුවරුවෙන් ලැයිස්තුගත කළ හැක.' : lang === 'ta' ? 'தேடல் அல்லது வடிகட்டிகளை மாற்றிப் பார்க்கவும். விவசாயிகள் தங்கள் அறுவடைகளை கட்டுப்பாட்டுப் பலகையிலிருந்து பட்டியலிடலாம்.' : 'Try adjusting your search or filters. Farmers can list their harvests from the dashboard.'}
           />
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -142,42 +145,54 @@ export default function CropsView() {
                       className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center text-primary/30">
-                      <Sprout className="h-10 w-10" />
+                    <div className="flex h-full w-full items-center justify-center text-muted-foreground/40">
+                      <ImageIcon className="h-10 w-10" />
                     </div>
                   )}
                   {c.grade && (
                     <Badge className={`absolute left-2 top-2 border-transparent ${GRADE_TONES[c.grade] || 'bg-primary/90 text-primary-foreground'}`}>
-                      Grade {c.grade}
+                      {lang === 'si' ? 'ශ්‍රේණිය' : lang === 'ta' ? 'தரம்' : 'Grade'} {c.grade}
                     </Badge>
                   )}
                 </div>
                 <CardContent className="space-y-2 p-4">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <h3 className="truncate font-semibold">{c.cropName}</h3>
-                    {c.variety && <span className="truncate text-xs text-muted-foreground">{c.variety}</span>}
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h3 className="line-clamp-1 font-semibold leading-tight">{c.cropName}</h3>
+                      {c.variety ? <p className="text-xs text-muted-foreground">{c.variety}</p> : null}
+                    </div>
                   </div>
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-lg font-bold text-primary">{money(c.askingPrice)}</span>
-                    {(c.quantity != null || c.unit) && (
+                  <div className="flex items-baseline justify-between pt-1">
+                    <span className="text-lg font-bold text-primary">
+                      {c.askingPrice ? (
+                        <>
+                          {money(c.askingPrice)}
+                          <span className="ml-1 text-xs font-medium text-muted-foreground">/ {c.unit || 'kg'}</span>
+                        </>
+                      ) : (
+                        <span className="text-xs font-medium text-muted-foreground">{lang === 'si' ? 'මිල සාකච්ඡා කළ හැක' : lang === 'ta' ? 'பேசித் தீர்மானிக்கலாம்' : 'Price on request'}</span>
+                      )}
+                    </span>
+                    {c.quantity ? (
                       <span className="text-xs font-medium text-muted-foreground">
-                        {c.quantity ?? '—'} {c.unit || ''}
+                        {c.quantity.toLocaleString()} {c.unit || 'kg'}
                       </span>
-                    )}
+                    ) : null}
                   </div>
-                  <div className="space-y-1 border-t border-border pt-2 text-xs text-muted-foreground">
-                    <div className="flex items-center gap-1 truncate">
+                  <div className="flex items-center justify-between border-t border-border pt-2 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1 truncate">
                       <MapPin className="h-3 w-3" /> {c.district || 'Sri Lanka'}
-                    </div>
-                    {c.expectedHarvestDate && (
-                      <div className="flex items-center gap-1 truncate">
-                        <Calendar className="h-3 w-3" /> Harvest {formatDate(c.expectedHarvestDate)}
-                      </div>
-                    )}
-                    <div className="flex items-center gap-1 truncate">
+                    </span>
+                    <span className="flex items-center gap-1 truncate">
                       <User className="h-3 w-3" /> {c.owner.name}
-                    </div>
+                    </span>
                   </div>
+                  {c.expectedHarvestDate && (
+                    <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                      <Calendar className="h-3 w-3" />
+                      <span>{lang === 'si' ? 'අස්වනු දිනය' : lang === 'ta' ? 'அறுவடை தேதி' : 'Harvest'}: {formatDate(c.expectedHarvestDate)}</span>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}

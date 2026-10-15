@@ -2,6 +2,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useApp } from '@/lib/store'
+import { useT, useLang } from '@/lib/use-t'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -63,6 +64,8 @@ function splitList(value?: string | null) {
 
 export default function ExpertsView() {
   const { openDetail, setView, user } = useApp()
+  const { lang } = useLang()
+  const t = useT()
   const [q, setQ] = useState('')
   const [debouncedQ, setDebouncedQ] = useState('')
   const [district, setDistrict] = useState<string>('all')
@@ -72,8 +75,8 @@ export default function ExpertsView() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedQ(q.trim()), 300)
-    return () => clearTimeout(t)
+    const timer = setTimeout(() => setDebouncedQ(q.trim()), 300)
+    return () => clearTimeout(timer)
   }, [q])
 
   useEffect(() => {
@@ -108,34 +111,34 @@ export default function ExpertsView() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
       <SectionHeader
-        eyebrow="Find Experts"
-        title="Verified agricultural experts across Sri Lanka"
-        description="Connect with agricultural officers, researchers and consultants. Search by name, expertise, district or crop to find the right specialist for your farm."
+        eyebrow={t('nav.findExperts')}
+        title={lang === 'si' ? 'ශ්‍රී ලංකාව පුරා සත්‍යාපිත කෘෂිකාර්මික විශේෂඥයන්' : lang === 'ta' ? 'இலங்கை முழுவதிலும் உள்ள சரிபார்க்கப்பட்ட வேளாண் நிபுணர்கள்' : 'Verified agricultural experts across Sri Lanka'}
+        description={lang === 'si' ? 'කෘෂිකර්ම නිලධාරීන්, පර්යේෂකයන් සහ උපදේශකයන් සමඟ සම්බන්ධ වන්න. ඔබේ ගොවිපළට ගැළපෙන විශේෂඥයා සොයා ගන්න.' : lang === 'ta' ? 'வேளாண் அதிகாரிகள், ஆராய்ச்சியாளர்கள் மற்றும் ஆலோசகர்களுடன் இணையுங்கள். உங்கள் பண்ணைக்கான பொருத்தமான நிபுணரைக் கண்டறியவும்.' : 'Connect with agricultural officers, researchers and consultants. Search by name, expertise, district or crop to find the right specialist for your farm.'}
       />
 
       {/* Quick stats */}
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="rounded-xl border border-border bg-card p-4">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Users className="h-3.5 w-3.5 text-primary" /> Experts shown
+            <Users className="h-3.5 w-3.5 text-primary" /> {lang === 'si' ? 'විශේෂඥයන්' : lang === 'ta' ? 'காட்டப்படும் நிபுணர்கள்' : 'Experts shown'}
           </div>
           <div className="mt-1 text-xl font-bold">{experts.length}</div>
         </div>
         <div className="rounded-xl border border-border bg-card p-4">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <ShieldCheck className="h-3.5 w-3.5 text-primary" /> Verified
+            <ShieldCheck className="h-3.5 w-3.5 text-primary" /> {t('badge.verified')}
           </div>
           <div className="mt-1 text-xl font-bold">{experts.filter((e) => e.verified).length}</div>
         </div>
         <div className="rounded-xl border border-border bg-card p-4">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Star className="h-3.5 w-3.5 text-primary" /> Avg. rating
+            <Star className="h-3.5 w-3.5 text-primary" /> {lang === 'si' ? 'සාමාන්‍ය ඇගයීම' : lang === 'ta' ? 'சராசரி மதிப்பீடு' : 'Avg. rating'}
           </div>
           <div className="mt-1 text-xl font-bold">{avgRating ? avgRating.toFixed(1) : '—'}</div>
         </div>
         <div className="rounded-xl border border-border bg-card p-4">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <MapPin className="h-3.5 w-3.5 text-primary" /> Available now
+            <MapPin className="h-3.5 w-3.5 text-primary" /> {lang === 'si' ? 'දැනට සම්බන්ධ විය හැක' : lang === 'ta' ? 'இப்போது தொடர்பில்' : 'Available now'}
           </div>
           <div className="mt-1 text-xl font-bold">{experts.filter((e) => e.available).length}</div>
         </div>
@@ -149,7 +152,7 @@ export default function ExpertsView() {
             <Input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Search name, expertise, or bio…"
+              placeholder={lang === 'si' ? 'නම, විශේෂඥතාව හෝ විස්තර සොයන්න…' : lang === 'ta' ? 'பெயர் அல்லது நிபுணத்துவத்தைத் தேடுங்கள்…' : 'Search name, expertise, or bio…'}
               className="pl-9"
               aria-label="Search experts"
             />
@@ -157,10 +160,10 @@ export default function ExpertsView() {
           <div className="lg:col-span-3">
             <Select value={district} onValueChange={setDistrict}>
               <SelectTrigger className="w-full" aria-label="Filter by district">
-                <SelectValue placeholder="District" />
+                <SelectValue placeholder={lang === 'si' ? 'සියලු දිස්ත්‍රික්ක' : lang === 'ta' ? 'அனைத்து மாவட்டங்களும்' : 'All districts'} />
               </SelectTrigger>
               <SelectContent className="gs-scroll max-h-72 overflow-y-auto">
-                <SelectItem value="all">All districts</SelectItem>
+                <SelectItem value="all">{lang === 'si' ? 'සියලු දිස්ත්‍රික්ක' : lang === 'ta' ? 'அனைத்து மாவட்டங்களும்' : 'All districts'}</SelectItem>
                 {SRI_LANKAN_DISTRICTS.map((d) => (
                   <SelectItem key={d} value={d}>
                     {d}
@@ -172,10 +175,10 @@ export default function ExpertsView() {
           <div className="lg:col-span-3">
             <Select value={crop} onValueChange={setCrop}>
               <SelectTrigger className="w-full" aria-label="Filter by crop">
-                <SelectValue placeholder="Crop" />
+                <SelectValue placeholder={lang === 'si' ? 'සියලු බෝග' : lang === 'ta' ? 'அனைத்து பயிர்களும்' : 'All crops'} />
               </SelectTrigger>
               <SelectContent className="gs-scroll max-h-72 overflow-y-auto">
-                <SelectItem value="all">All crops</SelectItem>
+                <SelectItem value="all">{lang === 'si' ? 'සියලු බෝග' : lang === 'ta' ? 'அனைத்து பயிர்களும்' : 'All crops'}</SelectItem>
                 {COMMON_CROPS.map((c) => (
                   <SelectItem key={c} value={c}>
                     {c}
@@ -192,7 +195,7 @@ export default function ExpertsView() {
               aria-label="Show verified experts only"
             />
             <Label htmlFor="verified-only" className="text-xs text-muted-foreground">
-              Verified
+              {t('badge.verified')}
             </Label>
           </div>
         </div>
@@ -206,21 +209,25 @@ export default function ExpertsView() {
               <Sparkles className="h-4 w-4" />
             </span>
             <div>
-              <p className="text-sm font-medium text-foreground">Found an expert you'd like to consult?</p>
+              <p className="text-sm font-medium text-foreground">
+                {lang === 'si' ? 'ඔබට උපදෙස් ලබා ගැනීමට විශේෂඥයෙකු හමුවුණාද?' : lang === 'ta' ? 'நீங்கள் கலந்தாலோசிக்க விரும்பும் ஒரு நிபுணரைக் கண்டறிந்தீர்களா?' : "Found an expert you'd like to consult?"}
+              </p>
               <p className="text-xs text-muted-foreground">
-                Open your dashboard to request a consultation and start a secure chat.
+                {lang === 'si' ? 'උපදේශනයක් ඉල්ලා සිටීමට සහ ආරක්ෂිත සංවාදය ආරම්භ කිරීමට ඔබගේ උපකරණ පුවරුවට පිවිසෙන්න.' : lang === 'ta' ? 'ஆலோசனையைக் கோரவும் பாதுகாப்பான உரையாடலைத் தொடங்கவும் உங்கள் கட்டுப்பாட்டுப் பலகையைத் திறக்கவும்.' : 'Open your dashboard to request a consultation and start a secure chat.'}
               </p>
             </div>
           </div>
           <Button onClick={() => setView('dashboard')} className="bg-primary hover:bg-primary/90">
-            Go to dashboard <ArrowRight className="ml-2 h-4 w-4" />
+            {t('nav.dashboard')} <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
       )}
 
       {/* Result count */}
       <div className="mt-6 text-sm text-muted-foreground">
-        {loading ? 'Loading experts…' : `${experts.length} expert${experts.length === 1 ? '' : 's'} found`}
+        {loading
+          ? (lang === 'si' ? 'විශේෂඥයන් පූරණය වෙමින්…' : lang === 'ta' ? 'நிபுணர்கள் ஏற்றப்படுகிறார்கள்…' : 'Loading experts…')
+          : (lang === 'si' ? `විශේෂඥයන් ${experts.length}ක් සොයා ගන්නා ලදී` : lang === 'ta' ? `${experts.length} நிபுணர்கள் கண்டறியப்பட்டனர்` : `${experts.length} expert${experts.length === 1 ? '' : 's'} found`)}
       </div>
 
       {/* Results */}

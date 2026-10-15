@@ -1,41 +1,49 @@
 'use client'
 import { Mail, Phone, MapPin, Facebook, Twitter, Youtube, Linkedin } from 'lucide-react'
 import { useApp } from '@/lib/store'
+import { useT } from '@/lib/use-t'
 import type { View } from '@/lib/store'
 
-const cols: { title: string; links: { label: string; view: View }[] }[] = [
+type ColConfig = {
+  titleKey: string
+  links: { tKey: string; view: View }[]
+}
+
+const cols: ColConfig[] = [
   {
-    title: 'Platform',
+    titleKey: 'footer.platform',
     links: [
-      { label: 'Find Experts', view: 'experts' },
-      { label: 'Knowledge Hub', view: 'knowledge' },
-      { label: 'Marketplace', view: 'marketplace' },
-      { label: 'Crop Listings', view: 'crops' },
-      { label: 'Jobs & Services', view: 'jobs' },
+      { tKey: 'footer.findExperts', view: 'experts' },
+      { tKey: 'footer.knowledge', view: 'knowledge' },
+      { tKey: 'footer.marketplace', view: 'marketplace' },
+      { tKey: 'footer.crops', view: 'crops' },
+      { tKey: 'footer.jobs', view: 'jobs' },
     ],
   },
   {
-    title: 'For Farmers',
+    titleKey: 'footer.forFarmers',
     links: [
-      { label: 'Report a Problem', view: 'register' },
-      { label: 'Find Buyers', view: 'buyer-requirements' },
-      { label: 'Buy Products', view: 'marketplace' },
-      { label: 'Hire Workers', view: 'jobs' },
+      { tKey: 'footer.reportProblem', view: 'register' },
+      { tKey: 'footer.findBuyers', view: 'buyer-requirements' },
+      { tKey: 'footer.buyProducts', view: 'marketplace' },
+      { tKey: 'footer.hireWorkers', view: 'jobs' },
     ],
   },
   {
-    title: 'Company',
+    titleKey: 'footer.company',
     links: [
-      { label: 'About Us', view: 'about' },
-      { label: 'Contact Us', view: 'contact' },
-      { label: 'Privacy Policy', view: 'privacy' },
-      { label: 'Terms & Conditions', view: 'terms' },
+      { tKey: 'footer.about', view: 'about' },
+      { tKey: 'footer.contact', view: 'contact' },
+      { tKey: 'footer.privacy', view: 'privacy' },
+      { tKey: 'footer.terms', view: 'terms' },
     ],
   },
 ]
 
 export function Footer() {
   const { setView } = useApp()
+  const t = useT()
+
   return (
     <footer className="mt-auto border-t border-border bg-card">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
@@ -49,8 +57,7 @@ export function Footer() {
               className="h-16 w-auto"
             />
             <p className="mt-4 max-w-sm text-sm text-muted-foreground leading-relaxed">
-              A digital agriculture platform connecting Sri Lankan farmers with verified agricultural
-              experts, enterprises, workers and buyers — to close the knowledge gap and modernise farming.
+              {t('footer.desc')}
             </p>
             <div className="mt-4 space-y-1.5 text-sm text-muted-foreground">
               <div className="flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" /> Dalugama, Kelaniya, Sri Lanka</div>
@@ -59,16 +66,16 @@ export function Footer() {
             </div>
           </div>
           {cols.map((c) => (
-            <div key={c.title}>
-              <h3 className="text-sm font-semibold text-foreground">{c.title}</h3>
+            <div key={c.titleKey}>
+              <h3 className="text-sm font-semibold text-foreground">{t(c.titleKey)}</h3>
               <ul className="mt-3 space-y-2">
                 {c.links.map((l) => (
-                  <li key={l.label}>
+                  <li key={l.tKey}>
                     <button
                       onClick={() => setView(l.view)}
                       className="text-sm text-muted-foreground transition-colors hover:text-primary"
                     >
-                      {l.label}
+                      {t(l.tKey)}
                     </button>
                   </li>
                 ))}
@@ -78,7 +85,7 @@ export function Footer() {
         </div>
         <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-border pt-6 sm:flex-row">
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} GoviSahana. Built for Sri Lankan agriculture. Demo platform for educational purposes.
+            © {new Date().getFullYear()} GoviSahana. {t('footer.rights')}
           </p>
           <div className="flex items-center gap-3 text-muted-foreground">
             {[Facebook, Twitter, Youtube, Linkedin].map((Icon, i) => (
