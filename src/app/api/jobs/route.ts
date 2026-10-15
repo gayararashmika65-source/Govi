@@ -10,6 +10,7 @@ export async function GET(req: NextRequest) {
   const district = searchParams.get('district')
   const mine = searchParams.get('mine') === 'true'
   const session = await getSession()
+  if (!session) return unauthorized()
 
   const where = {
     AND: [

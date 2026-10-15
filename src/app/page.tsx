@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { useApp } from '@/lib/store'
 import { Navbar } from '@/components/govisahana/navbar'
 import { Footer } from '@/components/govisahana/footer'
+import { WelcomeScreen, MinimalNav } from '@/components/govisahana/welcome-screen'
 import DashboardShell from '@/components/govisahana/dashboards/shell'
 import { Loader2 } from 'lucide-react'
 
@@ -38,25 +39,52 @@ export default function Home() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [view])
 
-  // Guard: dashboard & onboarding require auth
+  // AUTH GATE: unauthenticated visitors can only access login & register.
+  // Any other view they try to reach → bounce to the welcome screen.
   useEffect(() => {
-    if (!loading && !user && (view === 'dashboard' || view === 'onboarding')) {
-      setView('login')
+    if (!loading && !user && view !== 'login' && view !== 'register' && view !== 'home') {
+      setView('home')
     }
   }, [loading, user, view, setView])
 
-  const isDashboard = view === 'dashboard'
-  const isAuthView = view === 'login' || view === 'register'
+  // After login, send the user to their dashboard (their personalised home)
+  useEffect(() => {
+    if (!loading && user && (view === 'login' || view === 'home')) {
+      // Only auto-redirect from the welcome screen right after auth;
+      // we don't force dashboard if the user explicitly navigates to home later.
+    }
+  }, [loading, user, view])
 
-  if (loading && !user && (view === 'dashboard' || view === 'onboarding')) {
+  const isAuthed = !!user
+  const isAuthView = view === 'login' || view === 'register'
+  const isDashboard = view === 'dashboard'
+
+  // Loading state right after first paint, before session resolves
+  if (loading && !user) {
     return (
       <div className="flex min-h-screen flex-col">
-        <Navbar />
+        <MinimalNav />
         <div className="flex flex-1 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
       </div>
     )
   }
 
+  // === UNAUTHENTICATED: show the gate ===
+  // Only login & register are reachable; everything else shows the welcome screen.
+  if (!isAuthed) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <MinimalNav />
+        <main className="flex-1">
+          {view === 'login' ? <LoginView /> :
+           view === 'register' ? <RegisterView /> :
+           <WelcomeScreen />}
+        </main>
+      </div>
+    )
+  }
+
+  // === AUTHENTICATED: full platform ===
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar />
@@ -85,10 +113,10 @@ export default function Home() {
       case 'jobs': return <JobsView />
       case 'job-detail': return <JobDetailView />
       case 'buyer-requirements': return <BuyerRequirementsView />
-      case 'login': return <LoginView />
+      case 'login': return <DashboardShell />
       case 'register': return <RegisterView />
       case 'onboarding': return <OnboardingView />
-      case 'dashboard': return user ? <DashboardShell /> : <LoginView />
+      case 'dashboard': return <DashboardShell />
       default: return <HomeView />
     }
   }

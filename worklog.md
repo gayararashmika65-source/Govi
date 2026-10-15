@@ -158,3 +158,32 @@ Verification (Agent Browser + VLM):
 
 Stage Summary:
 - GoviSahana branding is now consistent everywhere (navbar, footer, dashboard sidebar, login, register, favicon, OG image, apple-touch-icon). The user's original circular green leaf logo is used throughout. No placeholder Sprout icon remains in brand positions.
+
+---
+Task ID: 12
+Agent: Main (orchestrator)
+Task: Gate the entire platform behind authentication — visitors must register/login before accessing any functions
+
+Work Log:
+- Created src/components/govisahana/welcome-screen.tsx with two exports:
+  • MinimalNav — sticky header with ONLY the logo + "Sign in" (ghost) + "Get Started" (primary). No marketplace/experts/knowledge/jobs nav links.
+  • WelcomeScreen — gated landing: large logo, headline, subtext, "Create a free account" + "Sign in" CTAs, trust badges (6 roles / verified / 25 districts), a benefits card ("What you can do on GoviSahana" with 4 benefits + role picker that links to register). Does NOT expose marketplace listings, experts directory, knowledge articles, or any platform function.
+- Rewrote src/app/page.tsx with an auth gate:
+  • Loading state (session resolving) → MinimalNav + spinner.
+  • Unauthenticated → MinimalNav + (view==='login' ? LoginView : view==='register' ? RegisterView : WelcomeScreen). No footer.
+  • Authenticated → full Navbar + renderView + Footer (as before).
+  • Guard effect: if !user and view not in [login, register, home], bounce to 'home' (which renders the WelcomeScreen for unauth).
+- Defense-in-depth: added getSession() auth checks to all previously-public listing GET endpoints so direct API access also requires a session:
+  • /api/experts (+[id]), /api/knowledge (+[id]), /api/products (+[id]), /api/crops (+[id]), /api/services (+[id]), /api/jobs (+[id]), /api/buyer-requirements
+  • Verified: unauth → 401 on all; authed → 200 on all.
+- (Admin/cases/consultations/profile/my routes already enforced auth from before.)
+
+Verification (Agent Browser):
+- Unauth visit → WelcomeScreen + MinimalNav (only "Sign in"/"Get Started"). No marketplace/experts nav, no footer. ✓
+- Click "Create a free account" → register view (with MinimalNav above). ✓
+- Login (farmer/admin) → full Navbar appears with all functions + footer. ✓
+- Admin role reaches dashboard. ✓
+- Lint: 0 errors.
+
+Stage Summary:
+- Platform is now fully gated. Unauthenticated visitors see only a focused welcome/registration screen — they cannot browse the marketplace, experts directory, knowledge hub, crop/job listings, or any dashboard until they register and log in. All listing APIs also reject unauthenticated requests (401). Authenticated users get the full platform as before.

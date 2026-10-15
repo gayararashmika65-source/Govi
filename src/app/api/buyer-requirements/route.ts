@@ -9,6 +9,7 @@ export async function GET(req: NextRequest) {
   const q = searchParams.get('q')?.trim()
   const mine = searchParams.get('mine') === 'true'
   const session = await getSession()
+  if (!session) return unauthorized()
   const where = {
     AND: [
       mine && session ? { ownerId: session.id } : { status: 'OPEN' },

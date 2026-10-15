@@ -1,8 +1,12 @@
 import { NextRequest } from 'next/server'
 import { db } from '@/lib/db'
+import { getSession } from '@/lib/auth'
+import { unauthorized } from '@/lib/server-helpers'
 
-// GET verified experts with optional search
+// GET verified experts with optional search (requires authentication)
 export async function GET(req: NextRequest) {
+  const session = await getSession()
+  if (!session) return unauthorized()
   const { searchParams } = new URL(req.url)
   const q = searchParams.get('q')?.trim()
   const district = searchParams.get('district')?.trim()
