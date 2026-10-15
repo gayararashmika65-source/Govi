@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { verifyOtp } from '@/lib/otp'
 import { apiError, audit } from '@/lib/server-helpers'
 import { db } from '@/lib/db'
-import { setSessionCookie, useSupabaseAuth, type Role } from '@/lib/auth'
+import { setSessionCookie, setSupabaseTokenCookie, useSupabaseAuth, hashPassword, type Role } from '@/lib/auth'
 import { getSupabaseAdmin } from '@/lib/supabase-server'
 
 const schema = z.object({
@@ -11,6 +11,7 @@ const schema = z.object({
   code: z.string().length(6, 'Verification code must be 6 digits'),
   purpose: z.enum(['login', 'register']).default('login'),
   name: z.string().min(2, 'Name must be at least 2 characters').optional(),
+  password: z.string().min(6, 'Password must be at least 6 characters').optional(),
   role: z.enum(['FARMER', 'EXPERT', 'ENTERPRISE', 'WORKER', 'BUYER'] as [Role, ...Role[]]).optional(),
   phone: z.string().optional(),
 })
@@ -28,7 +29,7 @@ export async function POST(req: NextRequest) {
     return apiError(parsed.error.issues[0]?.message || 'Invalid input')
   }
 
-  const { email, code, purpose, name, role, phone } = parsed.data
+  const { email, code, purpose, name, password, role, phone } = parsed.data
   const normalizedEmail = email.toLowerCase().trim()
 
   // 1. Verify the OTP code
@@ -99,6 +100,9 @@ export async function POST(req: NextRequest) {
     if (!name || !role) {
       return apiError('Name and role are required to complete registration.', 400)
     }
+    if (!password || password.length < 6) {
+      return apiError('Password must be at least 6 characters.', 400)
+    }
 
     if (useSupabaseAuth) {
       const admin = getSupabaseAdmin()
@@ -110,11 +114,10 @@ export async function POST(req: NextRequest) {
         return apiError('An account with this email already exists. Please sign in.', 409)
       }
 
-      // Create user via admin API with email confirmed
-      const randomPassword = 'Otp_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+      // Create user via admin API with email confirmed and chosen password
       const { data: authData, error: authErr } = await admin.auth.admin.createUser({
         email: normalizedEmail,
-        password: randomPassword,
+        password,
         email_confirm: true,
         user_metadata: { role, name, phone },
       })
@@ -124,6 +127,24 @@ export async function POST(req: NextRequest) {
       }
 
       await setSessionCookie(authData.user.id)
+
+      // Also set Supabase access token cookie if possible
+      try {
+        const { getSupabase } = await import('@/lib/supabase-server')
+        const sb = getSupabase()
+        if (sb) {
+          const { data: loginData } = await sb.auth.signInWithPassword({
+            email: normalizedEmail,
+            password,
+          })
+          if (loginData?.session?.access_token) {
+            await setSupabaseTokenCookie(loginData.session.access_token)
+          }
+        }
+      } catch (err) {
+        console.warn('Could not set Supabase token cookie on OTP verify:', err)
+      }
+
       await audit(authData.user.id, 'USER_REGISTER_OTP', authData.user.id, `Registered as ${role} via email OTP`)
 
       // Fetch the created profile
@@ -145,12 +166,11 @@ export async function POST(req: NextRequest) {
         return apiError('An account with this email already exists. Please sign in.', 409)
       }
 
-      const randomPasswordHash = 'otp_verified_' + Date.now()
       const user = await db.user.create({
         data: {
           email: normalizedEmail,
           name,
-          passwordHash: randomPasswordHash,
+          passwordHash: hashPassword(password || 'password123'),
           role,
           phone,
           status: 'ACTIVE',

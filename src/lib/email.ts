@@ -70,11 +70,34 @@ export async function sendOtpEmail({ to, code, purpose = 'login' }: SendOtpParam
 
     if (response.error) {
       console.error('[Resend Error]:', response.error)
+      // If unverified domain limitation on Resend free tier, fall back to dev simulation
+      if (
+        response.error.name === 'validation_error' &&
+        response.error.message?.includes('only send testing emails to your own email address')
+      ) {
+        console.warn(`[Resend Sandbox]: Cannot send to external recipient ${to} without a custom domain. Using simulated code: ${code}`)
+        return {
+          success: true,
+          simulated: true,
+          code,
+          warning: 'Sandbox mode: to send to all emails, verify your domain in Resend dashboard.',
+        }
+      }
       throw new Error(response.error.message)
     }
 
     return { success: true, id: response.data?.id }
-  } catch (err) {
+  } catch (err: unknown) {
+    const errorObj = err as { message?: string }
+    if (errorObj?.message?.includes('only send testing emails to your own email address')) {
+      console.warn(`[Resend Sandbox]: Cannot send to external recipient ${to}. Using simulated code: ${code}`)
+      return {
+        success: true,
+        simulated: true,
+        code,
+        warning: 'Sandbox mode: to send to all emails, verify your domain in Resend dashboard.',
+      }
+    }
     console.error('Failed to send email via Resend:', err)
     throw err
   }

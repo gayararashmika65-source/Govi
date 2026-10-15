@@ -52,6 +52,24 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // If purpose is register, ensure the account does not already exist
+  if (purpose === 'register') {
+    if (useSupabaseAuth) {
+      const admin = getSupabaseAdmin()
+      if (admin) {
+        const { data: profile } = await admin.from('profiles').select('id').eq('email', normalizedEmail).maybeSingle()
+        if (profile) {
+          return apiError('An account with this email already exists. Please log in instead.', 409)
+        }
+      }
+    } else {
+      const user = await db.user.findUnique({ where: { email: normalizedEmail } })
+      if (user) {
+        return apiError('An account with this email already exists. Please log in instead.', 409)
+      }
+    }
+  }
+
   // Generate 6-digit code and save
   const code = generateOtpCode()
   saveOtp(normalizedEmail, code, purpose)
