@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import {
   Menu, Bell, LogOut, User as UserIcon, LayoutDashboard,
-  Search, ShieldCheck, ChevronDown,
+  Search, ShieldCheck, ChevronDown, Users, MessageCircle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ROLE_LABELS } from '@/lib/types'
@@ -22,6 +22,7 @@ import type { View } from '@/lib/store'
 
 const PRIMARY_LINKS: { tKey: string; view: View; matchViews?: View[] }[] = [
   { tKey: 'nav.home', view: 'home' },
+  { tKey: 'nav.community', view: 'community', matchViews: ['community', 'user-profile', 'community-messages'] },
   { tKey: 'nav.findExperts', view: 'experts', matchViews: ['experts', 'expert-detail'] },
   { tKey: 'nav.knowledge', view: 'knowledge', matchViews: ['knowledge', 'article'] },
   { tKey: 'nav.marketplace', view: 'marketplace', matchViews: ['marketplace', 'product-detail'] },
@@ -237,6 +238,12 @@ export function Navbar() {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setView('dashboard')}>
                     <LayoutDashboard className="mr-2 h-4 w-4" /> {t('nav.dashboard')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setView('user-profile', user.id)}>
+                    <UserIcon className="mr-2 h-4 w-4 text-primary" /> {t('nav.mySocialProfile')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setView('community-messages')}>
+                    <MessageCircle className="mr-2 h-4 w-4 text-primary" /> {t('nav.directMessages')}
                   </DropdownMenuItem>
                   {user.role === 'EXPERT' && (
                     <DropdownMenuItem onClick={() => setView('onboarding')}>

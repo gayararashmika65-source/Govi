@@ -26,6 +26,9 @@ import BuyerRequirementsView from '@/components/govisahana/views/buyer-requireme
 import LoginView from '@/components/govisahana/views/login'
 import RegisterView from '@/components/govisahana/views/register'
 import OnboardingView from '@/components/govisahana/views/onboarding'
+import CommunityView from '@/components/govisahana/views/community'
+import UserProfileView from '@/components/govisahana/views/user-profile'
+import CommunityMessagesView from '@/components/govisahana/views/community-messages'
 
 export default function Home() {
   const { view, user, loading, refreshUser, setView, lang } = useApp()
@@ -125,6 +128,9 @@ export default function Home() {
       case 'register': return <RegisterView />
       case 'onboarding': return <OnboardingView />
       case 'dashboard': return <DashboardShell />
+      case 'community': return <CommunityView />
+      case 'user-profile': return <UserProfileView />
+      case 'community-messages': return <CommunityMessagesView />
       default: return <HomeView />
     }
   }

@@ -20,6 +20,9 @@ const en: Dict = {
 
   // nav
   'nav.home': 'Home',
+  'nav.community': 'Community',
+  'nav.mySocialProfile': 'My Social Profile',
+  'nav.directMessages': 'Community Chat',
   'nav.findExperts': 'Find Experts',
   'nav.knowledge': 'Knowledge Hub',
   'nav.marketplace': 'Marketplace',
@@ -261,6 +264,9 @@ const si: Dict = {
 
   // nav
   'nav.home': 'මුල් පිටුව',
+  'nav.community': 'ප්‍රජාව',
+  'nav.mySocialProfile': 'මගේ සමාජ පැතිකඩ',
+  'nav.directMessages': 'ප්‍රජා පණිවිඩ',
   'nav.findExperts': 'විශේෂඥයන් සොයන්න',
   'nav.knowledge': 'දැනුම මධ්‍යස්ථානය',
   'nav.marketplace': 'වෙළඳපොළ',
@@ -502,6 +508,9 @@ const ta: Dict = {
 
   // nav
   'nav.home': 'முகப்பு',
+  'nav.community': 'சமூகம்',
+  'nav.mySocialProfile': 'எனது சுயவிவரம்',
+  'nav.directMessages': 'செய்திகள்',
   'nav.findExperts': 'நிபுணர்களைக் கண்டறி',
   'nav.knowledge': 'அறிவு மையம்',
   'nav.marketplace': 'சந்தை',

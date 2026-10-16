@@ -47,6 +47,22 @@ model User {
   enquiriesReceived  Enquiry[]          @relation("EnquiryRecipient")
   reportsFiled       Report[]
   auditLogs          AuditLog[]
+
+  communityProfile   CommunityProfile?
+  communityPosts     CommunityPost[]    @relation("UserCommunityPosts")
+  postLikes          PostLike[]
+  postComments       PostComment[]
+  postSaves          PostSave[]
+  postShares         PostShare[]
+  following          UserFollow[]       @relation("UserFollowing")
+  followers          UserFollow[]       @relation("UserFollowers")
+  sentFriendRequests FriendRequest[]    @relation("SentRequests")
+  receivedFriendRequests FriendRequest[] @relation("ReceivedRequests")
+  blockedUsers       UserBlock[]        @relation("UserBlocker")
+  blockedByUsers     UserBlock[]        @relation("UserBlocked")
+  directConversations1 DirectConversation[] @relation("ConversationUser1")
+  directConversations2 DirectConversation[] @relation("ConversationUser2")
+  directMessagesSent DirectMessage[]
 }
 
 // ----------------------------- Role profiles -----------------------------
@@ -401,4 +417,160 @@ model ContactMessage {
   message   String
   status    String   @default("NEW") // NEW | READ | RESOLVED
   createdAt DateTime @default(now())
+}
+
+// ----------------------------- Community & Social -----------------------------
+
+model CommunityProfile {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  coverUrl       String?
+  bio            String?
+  district       String?
+  languages      String?  // comma-separated
+  interests      String?  // comma-separated (e.g. Organic, Irrigation, Hydroponics)
+  crops          String?  // comma-separated
+  profession     String?  // e.g. Paddy Farmer, Entomologist, Agri Equipment Dealer
+  website        String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model CommunityPost {
+  id            String   @id @default(cuid())
+  authorId      String
+  author        User     @relation("UserCommunityPosts", fields: [authorId], references: [id], onDelete: Cascade)
+  content       String
+  category      String   @default("GENERAL") // CROP_DISEASES | CULTIVATION | HARVESTING | AGRITECH | MARKET_INFO | RESEARCH | EXPERIENCES | QA | SUCCESS_STORIES | GENERAL
+  mediaUrls     String?  // JSON string array of image/video URLs
+  hashtags      String?  // space or comma-separated hashtags
+  visibility    String   @default("PUBLIC") // PUBLIC | CONNECTIONS
+  pinned        Boolean  @default(false)
+
+  // Shared / Quote Post attribution
+  sharedPostId  String?
+  sharedPost    CommunityPost?  @relation("PostSharesHierarchy", fields: [sharedPostId], references: [id], onDelete: SetNull)
+  childShares   CommunityPost[] @relation("PostSharesHierarchy")
+  sharedCaption String?
+
+  likesCount    Int      @default(0)
+  commentsCount Int      @default(0)
+  sharesCount   Int      @default(0)
+  savesCount    Int      @default(0)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  likes         PostLike[]
+  comments      PostComment[]
+  saves         PostSave[]
+  shares        PostShare[]
+}
+
+model PostLike {
+  id        String        @id @default(cuid())
+  postId    String
+  post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime      @default(now())
+
+  @@unique([postId, userId])
+}
+
+model PostComment {
+  id        String        @id @default(cuid())
+  postId    String
+  post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parentId  String?
+  parent    PostComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   PostComment[] @relation("CommentReplies")
+  content   String
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+model PostSave {
+  id        String        @id @default(cuid())
+  postId    String
+  post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime      @default(now())
+
+  @@unique([postId, userId])
+}
+
+model PostShare {
+  id             String        @id @default(cuid())
+  originalPostId String
+  originalPost   CommunityPost @relation(fields: [originalPostId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  caption        String?
+  createdAt      DateTime      @default(now())
+}
+
+model FriendRequest {
+  id         String   @id @default(cuid())
+  senderId   String
+  sender     User     @relation("SentRequests", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId String
+  receiver   User     @relation("ReceivedRequests", fields: [receiverId], references: [id], onDelete: Cascade)
+  status     String   @default("PENDING") // PENDING | ACCEPTED | REJECTED | CANCELLED
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([senderId, receiverId])
+}
+
+model UserFollow {
+  id          String   @id @default(cuid())
+  followerId  String
+  follower    User     @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  following   User     @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+}
+
+model DirectConversation {
+  id            String          @id @default(cuid())
+  user1Id       String
+  user1         User            @relation("ConversationUser1", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2Id       String
+  user2         User            @relation("ConversationUser2", fields: [user2Id], references: [id], onDelete: Cascade)
+  lastMessageAt DateTime        @default(now())
+  createdAt     DateTime        @default(now())
+
+  messages      DirectMessage[]
+
+  @@unique([user1Id, user2Id])
+}
+
+model DirectMessage {
+  id             String             @id @default(cuid())
+  conversationId String
+  conversation   DirectConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User               @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  body           String
+  mediaUrl       String?
+  read           Boolean            @default(false)
+  createdAt      DateTime           @default(now())
+}
+
+model UserBlock {
+  id        String   @id @default(cuid())
+  blockerId String
+  blocker   User     @relation("UserBlocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockedId String
+  blocked   User     @relation("UserBlocked", fields: [blockedId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([blockerId, blockedId])
 }

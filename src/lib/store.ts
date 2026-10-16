@@ -16,6 +16,7 @@ export type SessionUser = {
 
 export type View =
   | 'home' | 'about' | 'contact' | 'privacy' | 'terms'
+  | 'community' | 'user-profile' | 'community-messages'
   | 'experts' | 'expert-detail' | 'knowledge' | 'article'
   | 'marketplace' | 'product-detail'
   | 'crops' | 'crop-detail'
