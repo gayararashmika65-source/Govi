@@ -9,21 +9,26 @@ async function main() {
   const password = hashPassword('password123')
 
   const users = [
-    { email: 'farmer@demo.lk', name: 'Saman Bandara', role: 'FARMER', phone: '0771234567' },
-    { email: 'farmer2@demo.lk', name: 'Kumari Silva', role: 'FARMER', phone: '0772222333' },
-    { email: 'expert@demo.lk', name: 'Dr. Anura Perera', role: 'EXPERT', phone: '0712345678' },
-    { email: 'expert2@demo.lk', name: 'Prof. Niluka Fernando', role: 'EXPERT', phone: '0718765432' },
-    { email: 'enterprise@demo.lk', name: 'GreenGrow Supplies', role: 'ENTERPRISE', phone: '0751112222' },
-    { email: 'worker@demo.lk', name: 'Mahinda Gunasena', role: 'WORKER', phone: '0763334444' },
-    { email: 'buyer@demo.lk', name: 'Ceylon Fresh Exports', role: 'BUYER', phone: '0705556666' },
-    { email: 'admin@demo.lk', name: 'Platform Admin', role: 'ADMIN', phone: '0789990000' },
+    { email: 'farmer@demo.lk', name: 'Saman Bandara', role: 'FARMER', phone: '0771234567', avatarUrl: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=400&q=80' },
+    { email: 'farmer2@demo.lk', name: 'Kumari Silva', role: 'FARMER', phone: '0772222333', avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80' },
+    { email: 'expert@demo.lk', name: 'Dr. Anura Perera', role: 'EXPERT', phone: '0712345678', avatarUrl: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=400&q=80' },
+    { email: 'ngrashmika1@gmail.com', name: 'Prof. Hasitha Wijebandara', role: 'EXPERT', phone: '0706688150', avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80' },
+    { email: 'expert2@demo.lk', name: 'Prof. Niluka Fernando', role: 'EXPERT', phone: '0718765432', avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80' },
+    { email: 'sivanesan.expert@demo.lk', name: 'Dr. S. Sivanesan', role: 'EXPERT', phone: '0773344556', avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80' },
+    { email: 'priyantha.expert@demo.lk', name: 'Dr. Priyantha Jayasundara', role: 'EXPERT', phone: '0715566778', avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80' },
+    { email: 'thilini.expert@demo.lk', name: 'Mrs. Thilini Wickramarachchi', role: 'EXPERT', phone: '0779988776', avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=400&q=80' },
+    { email: 'bandaranayake.expert@demo.lk', name: 'Mr. K. M. Bandaranayake', role: 'EXPERT', phone: '0714455667', avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=400&q=80' },
+    { email: 'enterprise@demo.lk', name: 'GreenGrow Supplies', role: 'ENTERPRISE', phone: '0751112222', avatarUrl: 'https://images.unsplash.com/photo-1595246140625-573b715d11dc?auto=format&fit=crop&w=400&q=80' },
+    { email: 'worker@demo.lk', name: 'Mahinda Gunasena', role: 'WORKER', phone: '0763334444', avatarUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80' },
+    { email: 'buyer@demo.lk', name: 'Ceylon Fresh Exports', role: 'BUYER', phone: '0705556666', avatarUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=400&q=80' },
+    { email: 'admin@demo.lk', name: 'Platform Admin', role: 'ADMIN', phone: '0789990000', avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80' },
   ]
 
   const created: Record<string, string> = {}
   for (const u of users) {
     const user = await db.user.upsert({
       where: { email: u.email },
-      update: {},
+      update: { name: u.name, phone: u.phone, avatarUrl: u.avatarUrl },
       create: { ...u, passwordHash: password, status: 'ACTIVE' },
     })
     created[u.role] = user.id
@@ -52,30 +57,95 @@ async function main() {
   })
 
   // ---- Expert profiles (verified) ----
-  await db.expertProfile.upsert({
-    where: { userId: created['expert@demo.lk'] },
-    update: {},
-    create: {
+  const expertProfiles = [
+    {
       userId: created['expert@demo.lk'],
-      title: 'Senior Agricultural Officer', qualifications: 'BSc Agriculture (Peradeniya), MSc Plant Pathology',
-      expertise: 'Plant Pathology,Pest Management,Rice Cultivation', crops: 'Rice (Paddy),Onion,Chilli,Vegetables',
-      languages: 'Sinhala,English', serviceAreas: 'Anuradhapura,Polonnaruwa,Kurunegala',
-      bio: '20+ years advising dry-zone paddy farmers on disease and pest control.',
-      hourlyRate: 1500, verified: true, available: true, rating: 4.8,
+      title: 'Senior Agricultural Officer & Plant Pathologist',
+      qualifications: 'BSc Agriculture (Peradeniya), MSc Plant Pathology',
+      expertise: 'Plant Pathology,Pest Management,Rice Cultivation,Crop Protection',
+      crops: 'Rice (Paddy),Big Onion,Chilli,Vegetables,Maize',
+      languages: 'Sinhala,English',
+      serviceAreas: 'Anuradhapura,Polonnaruwa,Kurunegala,Matale',
+      bio: 'Over 20 years advising dry-zone paddy farmers on disease and pest control. Specializes in Brown Plant Hopper management.',
+      hourlyRate: 1500, verified: true, available: true, rating: 4.9,
     },
-  })
-  await db.expertProfile.upsert({
-    where: { userId: created['expert2@demo.lk'] },
-    update: {},
-    create: {
+    {
+      userId: created['ngrashmika1@gmail.com'],
+      title: 'Professor of Agricultural Entomology & Crop Protection',
+      qualifications: 'B.Sc Agriculture (Hons), M.Sc Applied Entomology, Ph.D. Pest Ecology',
+      expertise: 'Pest Management,Biological Control,Paddy & Coconut Diseases,Organic Solutions',
+      crops: 'Rice (Paddy),Coconut,Banana,Maize,Vegetables',
+      languages: 'Sinhala,English',
+      serviceAreas: 'Anuradhapura,Kurunegala,Gampaha,Colombo,Puttalam',
+      bio: 'Senior university professor and agricultural researcher with extensive field advisory experience for smallholder farmers.',
+      hourlyRate: 1800, verified: true, available: true, rating: 4.9,
+    },
+    {
       userId: created['expert2@demo.lk'],
-      title: 'Professor of Agriculture', qualifications: 'PhD Horticulture (University of Peradeniya)',
-      expertise: 'Horticulture,Vegetable Cultivation,Soil Fertility', crops: 'Vegetables,Potato,Fruits',
-      languages: 'Sinhala,English,Tamil', serviceAreas: 'Kandy,Nuwara Eliya,Matale',
-      bio: 'University researcher focused on up-country vegetable production and soil health.',
+      title: 'Professor of Horticulture & Protected Agriculture',
+      qualifications: 'PhD Horticulture (University of Peradeniya), Certified Soil Scientist',
+      expertise: 'Horticulture,Protected Agriculture,Greenhouse Vegetables,Soil Fertility & Nutrition',
+      crops: 'Tomato,Potato,Cabbage,Carrot,Capsicum,Strawberry',
+      languages: 'Sinhala,English,Tamil',
+      serviceAreas: 'Kandy,Nuwara Eliya,Matale,Badulla',
+      bio: 'University researcher focused on up-country vegetable production, greenhouse climate control, and soil health.',
       hourlyRate: 2500, verified: true, available: true, rating: 4.9,
     },
-  })
+    {
+      userId: created['sivanesan.expert@demo.lk'],
+      title: 'Senior Agronomist & Dry Zone Irrigation Specialist',
+      qualifications: 'B.Sc Agriculture (University of Jaffna), M.Sc Water Resource Management',
+      expertise: 'Drip Irrigation,Salinity Management,Red Onion & Chilli Cultivation,Precision Fertigation',
+      crops: 'Red Onion,Chilli,Brinjal,Groundnut,Watermelon,Pulses',
+      languages: 'Tamil,English,Sinhala',
+      serviceAreas: 'Jaffna,Kilinochchi,Vavuniya,Mannar,Mullaitivu',
+      bio: 'Dedicated agronomist serving Northern and Eastern province farmers. Specializes in micro-irrigation and red onion farming.',
+      hourlyRate: 1500, verified: true, available: true, rating: 4.8,
+    },
+    {
+      userId: created['priyantha.expert@demo.lk'],
+      title: 'Principal Plantation & Export Crop Specialist',
+      qualifications: 'B.Sc Agriculture, M.Phil Plantation Agriculture, Diploma in Export Agriculture',
+      expertise: 'Tea Cultivation,Cinnamon Processing,Rubber Tapping,Pepper & Spices,Organic Certification',
+      crops: 'Tea,Cinnamon,Pepper,Cardamom,Rubber,Coconut',
+      languages: 'Sinhala,English',
+      serviceAreas: 'Ratnapura,Galle,Matara,Kalutara,Kegalle',
+      bio: 'Over 25 years advising smallholder tea growers and spice estates in southern and Sabaragamuwa provinces.',
+      hourlyRate: 2000, verified: true, available: true, rating: 4.9,
+    },
+    {
+      userId: created['thilini.expert@demo.lk'],
+      title: 'Greenhouse & Hydroponics Consultant',
+      qualifications: 'B.Sc Agriculture, M.Sc Protected Agriculture & Agri-Technology',
+      expertise: 'Hydroponics,Greenhouse Management,Vertical Farming,Pest Exclusion,Nutrient Solutions',
+      crops: 'Bell Pepper,Salad Cucumber,Lettuce,Strawberry,Cherry Tomato',
+      languages: 'Sinhala,English',
+      serviceAreas: 'Nuwara Eliya,Badulla,Kandy,Colombo,Gampaha',
+      bio: 'Pioneering consultant helping commercial and urban farmers build automated, climate-resilient greenhouses.',
+      hourlyRate: 2200, verified: true, available: true, rating: 4.9,
+    },
+    {
+      userId: created['bandaranayake.expert@demo.lk'],
+      title: 'Post-Harvest Technology & Cold Chain Advisor',
+      qualifications: 'B.Sc Food Science & Agriculture, M.Sc Post-Harvest Technology',
+      expertise: 'Post-Harvest Loss Prevention,Cold Storage,Produce Grading,Safe Packaging & Transport',
+      crops: 'Mango,Papaya,Banana,Vegetables,Rice',
+      languages: 'Sinhala,English',
+      serviceAreas: 'Kurunegala,Anuradhapura,Dambulla,Hambantota,Monaragala',
+      bio: 'Former government agricultural officer working directly with farmer cooperatives and economic centres.',
+      hourlyRate: 1600, verified: true, available: true, rating: 4.8,
+    },
+  ]
+
+  for (const ep of expertProfiles) {
+    if (ep.userId) {
+      await db.expertProfile.upsert({
+        where: { userId: ep.userId },
+        update: ep,
+        create: ep,
+      })
+    }
+  }
 
   // ---- Enterprise profile ----
   await db.enterpriseProfile.upsert({

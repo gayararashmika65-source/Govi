@@ -15,18 +15,27 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     const { data: expert, error } = await admin.from('expert_profiles').select(`
       *, user:profiles!expert_profiles_user_id_fkey(id, name, email, phone, avatar_url),
       recommendations:expert_recommendations(*, agri_case:agricultural_cases(*))
-    `).eq('id', id).order('created_at', { foreignTable: 'recommendations', ascending: false }).limit(10, { foreignTable: 'recommendations' }).single()
+    `).or(`id.eq.${id},user_id.eq.${id}`).order('created_at', { foreignTable: 'recommendations', ascending: false }).limit(10, { foreignTable: 'recommendations' }).maybeSingle()
     if (error || !expert) return Response.json({ error: 'Not found' }, { status: 404 })
     return Response.json({ expert: snakeToCamel(expert) })
   }
 
-  const expert = await db.expertProfile.findUnique({
+  let expert = await db.expertProfile.findUnique({
     where: { id },
     include: {
       user: { select: { id: true, name: true, email: true, phone: true, avatarUrl: true } },
       recommendations: { include: { agriCase: true }, orderBy: { createdAt: 'desc' }, take: 10 },
     },
   })
+  if (!expert) {
+    expert = await db.expertProfile.findUnique({
+      where: { userId: id },
+      include: {
+        user: { select: { id: true, name: true, email: true, phone: true, avatarUrl: true } },
+        recommendations: { include: { agriCase: true }, orderBy: { createdAt: 'desc' }, take: 10 },
+      },
+    })
+  }
   if (!expert) return Response.json({ error: 'Not found' }, { status: 404 })
   return Response.json({ expert })
 }

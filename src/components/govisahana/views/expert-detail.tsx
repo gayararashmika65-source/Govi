@@ -1,7 +1,7 @@
  
 'use client'
 import { useEffect, useState, type ReactNode } from 'react'
-import { useApp } from '@/lib/store'
+import { useApp, api } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -9,6 +9,22 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { EmptyState, money, formatDate } from '@/components/govisahana/common'
 import { VerifiedBadge } from '@/components/govisahana/badges'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import {
   ArrowLeft,
@@ -24,6 +40,8 @@ import {
   Stethoscope,
   GraduationCap,
   BookOpen,
+  Loader2,
+  Plus,
 } from 'lucide-react'
 
 type Recommendation = {
@@ -131,9 +149,63 @@ export default function ExpertDetailView() {
     }
   }, [id])
 
-  function handleConsult() {
-    setView('dashboard')
-    toast.success('Open your dashboard to start a consultation with this expert.')
+  const [showConsultModal, setShowConsultModal] = useState(false)
+  const [cases, setCases] = useState<any[]>([])
+  const [selectedCaseId, setSelectedCaseId] = useState<string>('')
+  const [consultMessage, setConsultMessage] = useState('')
+  const [submittingConsult, setSubmittingConsult] = useState(false)
+  const [loadingCases, setLoadingCases] = useState(false)
+
+  const handleConsult = async () => {
+    if (!user) {
+      setView('login')
+      return
+    }
+    if (user.role !== 'FARMER') {
+      toast.error('Only registered farmers can request consultations.')
+      return
+    }
+    setShowConsultModal(true)
+    setLoadingCases(true)
+    try {
+      const res = await fetch('/api/cases', { credentials: 'include' })
+      const data = await res.json()
+      const farmerCases = (data.cases || []).filter((c: any) => c.status !== 'CLOSED' && c.status !== 'CANCELLED')
+      setCases(farmerCases)
+      if (farmerCases.length > 0) {
+        setSelectedCaseId(farmerCases[0].id)
+      }
+    } catch {
+      /* ignore */
+    } finally {
+      setLoadingCases(false)
+    }
+  }
+
+  const submitConsultationRequest = async () => {
+    if (!expert || !selectedCaseId) {
+      toast.error('Please select an agricultural case.')
+      return
+    }
+    setSubmittingConsult(true)
+    try {
+      await api('/api/consultations', {
+        method: 'POST',
+        body: JSON.stringify({
+          caseId: selectedCaseId,
+          expertId: expert.user.id,
+          type: 'CHAT',
+          message: consultMessage.trim() || undefined,
+        }),
+      })
+      toast.success(`Consultation request sent to ${expert.user.name}! Opening dashboard...`)
+      setShowConsultModal(false)
+      setView('dashboard')
+    } catch (e) {
+      toast.error((e as Error).message)
+    } finally {
+      setSubmittingConsult(false)
+    }
   }
 
   if (loading) {
@@ -433,6 +505,92 @@ export default function ExpertDetailView() {
           </Card>
         </aside>
       </div>
+
+      {/* Consultation Request Dialog */}
+      <Dialog open={showConsultModal} onOpenChange={setShowConsultModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Stethoscope className="h-5 w-5 text-primary" /> Request Consultation
+            </DialogTitle>
+            <DialogDescription>
+              Connect directly with {expert?.user.name} for agricultural advice.
+            </DialogDescription>
+          </DialogHeader>
+
+          {loadingCases ? (
+            <div className="flex h-32 items-center justify-center">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            </div>
+          ) : cases.length === 0 ? (
+            <div className="space-y-4 py-3 text-center">
+              <p className="text-sm text-muted-foreground">
+                You haven't reported any agricultural cases yet. Report your problem first so the expert can review your crops and symptoms.
+              </p>
+              <Button
+                className="w-full bg-primary hover:bg-primary/90"
+                onClick={() => {
+                  setShowConsultModal(false)
+                  setView('dashboard')
+                }}
+              >
+                <Plus className="mr-2 h-4 w-4" /> Report a problem in dashboard
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label>Select Case *</Label>
+                <Select value={selectedCaseId} onValueChange={setSelectedCaseId}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Choose one of your open cases" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cases.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.title} ({c.crop})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Initial Message / Problem Details (optional)</Label>
+                <Textarea
+                  value={consultMessage}
+                  onChange={(e) => setConsultMessage(e.target.value)}
+                  placeholder="Describe what help you need or ask your initial question..."
+                  rows={3}
+                />
+              </div>
+
+              <div className="rounded-lg bg-muted/40 p-3 text-xs text-muted-foreground flex justify-between items-center">
+                <span>Standard hourly consultation rate:</span>
+                <span className="font-semibold text-primary">{money(expert?.hourlyRate)}</span>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => setShowConsultModal(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={submitConsultationRequest}
+                  disabled={submittingConsult || !selectedCaseId}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  {submittingConsult ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                  )}
+                  Send Request
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
