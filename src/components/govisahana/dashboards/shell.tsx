@@ -95,11 +95,11 @@ function SidebarContent({ userName, userRole, avatarUrl, nav, currentTab, hasSub
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-sidebar-border p-4">
-        <button onClick={onHome} className="flex items-center gap-2.5">
-          <img src="/logo-icon.png" alt="GoviSahana logo" width={36} height={36} className="h-9 w-9 shrink-0" />
-          <div className="leading-none text-left">
+        <button onClick={onHome} className="flex items-center gap-2.5 rounded-lg py-1 transition-opacity hover:opacity-90 focus-visible:outline-none">
+          <img src="/logo-icon.png" alt="GoviSahana logo" width={36} height={36} className="h-9 w-9 shrink-0 object-contain" />
+          <div className="flex flex-col justify-center text-left leading-tight">
             <div className="text-base font-bold text-sidebar-foreground">GoviSahana</div>
-            <div className="text-[10px] text-sidebar-foreground/60">{t('nav.dashboard')}</div>
+            <div className="text-[10px] font-medium uppercase tracking-wider text-sidebar-foreground/60">{t('nav.dashboard')}</div>
           </div>
         </button>
       </div>
