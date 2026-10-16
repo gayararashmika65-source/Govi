@@ -47,10 +47,33 @@ export function CaseDetailPanel({ caseId, onBack, dash, isExpert }: { caseId: st
 
   const acceptCase = async () => {
     try {
-      await api(`/api/cases/${caseId}/assign`, { method: 'POST', body: JSON.stringify({}) })
-      toast.success('Case accepted. It is now under review.')
-      load()
+      const res = await api<{ case: AgriCase; consultationId?: string }>(`/api/cases/${caseId}/assign`, { method: 'POST', body: JSON.stringify({}) })
+      toast.success('Case accepted! You can now chat with the farmer.')
+      if (res?.consultationId) {
+        setMessagingConsultationId(res.consultationId)
+      } else {
+        load()
+      }
     } catch (e) { toast.error((e as Error).message) }
+  }
+
+  const startConsultation = async () => {
+    if (!agriCase) return
+    try {
+      const res = await api<{ consultation: { id: string } }>('/api/consultations', {
+        method: 'POST',
+        body: JSON.stringify({
+          caseId,
+          expertId: agriCase.expert?.id || user?.id,
+          type: 'CHAT',
+        }),
+      })
+      toast.success('Chat room opened')
+      setMessagingConsultationId(res.consultation.id)
+      load()
+    } catch (e) {
+      toast.error((e as Error).message)
+    }
   }
 
   const updateStatus = async (status: string) => {
@@ -170,8 +193,8 @@ export function CaseDetailPanel({ caseId, onBack, dash, isExpert }: { caseId: st
           <Card>
             <CardHeader><CardTitle className="text-sm">Reported by</CardTitle></CardHeader>
             <CardContent className="space-y-2 text-sm">
-              <div className="flex items-center gap-2"><User className="h-4 w-4 text-muted-foreground" /> {agriCase.farmer.name}</div>
-              {agriCase.farmer.phone && <div className="flex items-center gap-2 text-muted-foreground"><span className="h-4 w-4" /> {agriCase.farmer.phone}</div>}
+              <div className="flex items-center gap-2"><User className="h-4 w-4 text-muted-foreground" /> {agriCase.farmer?.name || 'Farmer'}</div>
+              {agriCase.farmer?.phone && <div className="flex items-center gap-2 text-muted-foreground"><span className="h-4 w-4" /> {agriCase.farmer.phone}</div>}
             </CardContent>
           </Card>
 
@@ -180,14 +203,21 @@ export function CaseDetailPanel({ caseId, onBack, dash, isExpert }: { caseId: st
             <CardHeader><CardTitle className="text-sm">Assigned expert</CardTitle></CardHeader>
             <CardContent className="space-y-3 text-sm">
               {agriCase.expert ? (
-                <div className="flex items-center gap-2"><span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">{agriCase.expert.name.split(' ').map((s) => s[0]).slice(0, 2).join('')}</span> {agriCase.expert.name}</div>
+                <div className="flex items-center gap-2">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                    {(agriCase.expert.name || 'Expert').split(' ').filter(Boolean).map((s) => s[0]).slice(0, 2).join('')}
+                  </span>
+                  <span className="font-medium">{agriCase.expert.name}</span>
+                </div>
               ) : (
                 <p className="text-muted-foreground">Not yet assigned</p>
               )}
 
               {/* Expert actions */}
               {isExpert && !agriCase.expert && (
-                <Button className="w-full" onClick={acceptCase}><ClipboardList className="mr-2 h-4 w-4" /> Accept this case</Button>
+                <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" onClick={acceptCase}>
+                  <ClipboardList className="mr-2 h-4 w-4" /> Accept this case & chat
+                </Button>
               )}
               {isExpert && agriCase.expert?.id === user?.id && agriCase.status !== 'RESOLVED' && agriCase.status !== 'CLOSED' && (
                 <>
@@ -201,7 +231,7 @@ export function CaseDetailPanel({ caseId, onBack, dash, isExpert }: { caseId: st
               )}
 
               {/* Farmer actions */}
-              {!isExpert && agriCase.farmer.id === user?.id && agriCase.status !== 'CLOSED' && agriCase.status !== 'RESOLVED' && (
+              {!isExpert && agriCase.farmer?.id === user?.id && agriCase.status !== 'CLOSED' && agriCase.status !== 'RESOLVED' && (
                 <Select onValueChange={(v) => updateStatus(v)}>
                   <SelectTrigger><SelectValue placeholder="Update status" /></SelectTrigger>
                   <SelectContent>
@@ -215,7 +245,7 @@ export function CaseDetailPanel({ caseId, onBack, dash, isExpert }: { caseId: st
 
           {/* Consultation / messaging */}
           <Card>
-            <CardHeader><CardTitle className="text-sm">Consultation</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-sm">Consultation & Chat</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               {activeConsultation ? (
                 <>
@@ -223,10 +253,21 @@ export function CaseDetailPanel({ caseId, onBack, dash, isExpert }: { caseId: st
                     <span className="text-muted-foreground">Status</span>
                     <StatusBadge status={activeConsultation.status} />
                   </div>
-                  <Button className="w-full" onClick={() => setMessagingConsultationId(activeConsultation.id)}><MessageSquare className="mr-2 h-4 w-4" /> Open messages</Button>
+                  <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => setMessagingConsultationId(activeConsultation.id)}>
+                    <MessageSquare className="mr-2 h-4 w-4" /> Open chat room
+                  </Button>
                 </>
               ) : (
-                <p className="text-sm text-muted-foreground">No consultation started yet.</p>
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    {agriCase.expert ? 'Expert assigned. Start a real-time consultation.' : 'Waiting for an agricultural expert to review your case.'}
+                  </p>
+                  {(agriCase.expert || isExpert) && (
+                    <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" onClick={startConsultation}>
+                      <MessageSquare className="mr-2 h-4 w-4" /> Start chat consultation
+                    </Button>
+                  )}
+                </div>
               )}
             </CardContent>
           </Card>

@@ -13,12 +13,33 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   if (useSupabaseAuth) {
     const admin = getSupabaseAdmin()
     if (!admin) return apiError('Supabase not configured', 500)
-    const { data: consultation, error } = await admin.from('consultations').select(`
+    let consultation: any = null
+    const { data, error } = await admin.from('consultations').select(`
       *, agri_case:agricultural_cases(*), farmer:profiles!consultations_farmer_id_fkey(id, name, avatar_url),
       expert:profiles!consultations_expert_id_fkey(id, name, avatar_url),
       messages:messages(*, sender:profiles!messages_sender_id_fkey(id, name, avatar_url))
     `).eq('id', id).single()
-    if (error || !consultation) return Response.json({ error: 'Not found' }, { status: 404 })
+
+    if (error || !data) {
+      const { data: raw, error: rErr } = await admin.from('consultations').select('*').eq('id', id).single()
+      if (rErr || !raw) return Response.json({ error: 'Not found' }, { status: 404 })
+      const [caseRes, farmerRes, expertRes, msgRes] = await Promise.all([
+        raw.case_id ? admin.from('agricultural_cases').select('*').eq('id', raw.case_id).maybeSingle() : Promise.resolve({ data: null }),
+        raw.farmer_id ? admin.from('profiles').select('id, name, avatar_url').eq('id', raw.farmer_id).maybeSingle() : Promise.resolve({ data: null }),
+        raw.expert_id ? admin.from('profiles').select('id, name, avatar_url').eq('id', raw.expert_id).maybeSingle() : Promise.resolve({ data: null }),
+        admin.from('messages').select('*').eq('consultation_id', id).order('created_at', { ascending: true }),
+      ])
+      consultation = {
+        ...raw,
+        agri_case: caseRes.data || { id: raw.case_id, title: 'Agricultural Consultation' },
+        farmer: farmerRes.data || { id: raw.farmer_id, name: 'Farmer' },
+        expert: expertRes.data || { id: raw.expert_id, name: 'Agricultural Expert' },
+        messages: msgRes.data || [],
+      }
+    } else {
+      consultation = data
+    }
+
     const allowed = consultation.farmer_id === session.id || consultation.expert_id === session.id || session.role === 'ADMIN'
     if (!allowed) return Response.json({ error: 'Forbidden' }, { status: 403 })
     return Response.json({ consultation: snakeToCamel(consultation) })
@@ -34,7 +55,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     },
   })
   if (!consultation) return Response.json({ error: 'Not found' }, { status: 404 })
-  const allowed = consultation.farmerId === session.id || consultation.expertId === session.id
+  const allowed = consultation.farmerId === session.id || consultation.expertId === session.id || session.role === 'ADMIN'
   if (!allowed) return Response.json({ error: 'Forbidden' }, { status: 403 })
   return Response.json({ consultation })
 }
@@ -75,7 +96,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   // Prisma path
   const existing = await db.consultation.findUnique({ where: { id }, select: { farmerId: true, expertId: true, caseId: true } })
   if (!existing) return apiError('Not found', 404)
-  const allowed = existing.farmerId === session.id || existing.expertId === session.id
+  const allowed = existing.farmerId === session.id || existing.expertId === session.id || session.role === 'ADMIN'
   if (!allowed) return Response.json({ error: 'Forbidden' }, { status: 403 })
   const updated = await db.consultation.update({
     where: { id },

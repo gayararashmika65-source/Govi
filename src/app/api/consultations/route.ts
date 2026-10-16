@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
       expert:profiles!consultations_expert_id_fkey(id, name, avatar_url)
     `)
     if (caseId) q = q.eq('case_id', caseId)
-    else q = q.or(`farmer_id.eq.${session.id},expert_id.eq.${session.id}`)
+    else if (session.role !== 'ADMIN') q = q.or(`farmer_id.eq.${session.id},expert_id.eq.${session.id}`)
     q = q.order('created_at', { ascending: false }).limit(100)
     const { data, error } = await q
     if (error) return apiError(error.message, 500)
@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
   }
 
   const where = {
-    OR: [{ farmerId: session.id }, { expertId: session.id }],
+    ...(session.role === 'ADMIN' ? {} : { OR: [{ farmerId: session.id }, { expertId: session.id }] }),
     ...(caseId ? { caseId } : {}),
   }
   const consultations = await db.consultation.findMany({
@@ -65,16 +65,32 @@ export async function POST(req: NextRequest) {
     if (!agriCase) return apiError('Case not found', 404)
     const farmerId = session.role === 'FARMER' ? session.id : agriCase.farmer_id
     const expertId = parsed.data.expertId
+
+    // Return existing consultation if one exists
+    const { data: existing } = await admin.from('consultations').select(`
+      *, agri_case:agricultural_cases(id, title, crop, category, status),
+      farmer:profiles!consultations_farmer_id_fkey(id, name, avatar_url),
+      expert:profiles!consultations_expert_id_fkey(id, name, avatar_url)
+    `).eq('case_id', parsed.data.caseId).maybeSingle()
+
+    if (existing) {
+      if (parsed.data.message) {
+        await admin.from('messages').insert({ consultation_id: existing.id, sender_id: session.id, body: parsed.data.message })
+      }
+      return Response.json({ consultation: snakeToCamel(existing) })
+    }
+
+    const initialStatus = session.role === 'EXPERT' || session.id === expertId ? 'ACCEPTED' : 'REQUESTED'
     const { data: consultation, error } = await admin.from('consultations').insert({
       case_id: parsed.data.caseId, farmer_id: farmerId, expert_id: expertId,
-      type: parsed.data.type, status: 'REQUESTED',
+      type: parsed.data.type, status: initialStatus,
     }).select().single()
     if (error) return apiError(error.message, 500)
-    await notify(expertId, 'CONSULTATION', 'New consultation request', `A farmer requested a consultation for “${agriCase.title}”.`)
+    await notify(expertId, 'CONSULTATION', 'New consultation', `Consultation regarding “${agriCase.title}”.`)
     if (parsed.data.message) {
-      await admin.from('messages').insert({ consultation_id: consultation.id, sender_id: farmerId, body: parsed.data.message })
+      await admin.from('messages').insert({ consultation_id: consultation.id, sender_id: session.id, body: parsed.data.message })
     }
-    await audit(session.id, 'CONSULTATION_REQUEST', consultation.id, `Requested ${parsed.data.type} consultation`)
+    await audit(session.id, 'CONSULTATION_REQUEST', consultation.id, `Created ${parsed.data.type} consultation`)
     return Response.json({ consultation: snakeToCamel(consultation) })
   }
 
@@ -83,13 +99,30 @@ export async function POST(req: NextRequest) {
   if (!agriCase) return apiError('Case not found', 404)
   const farmerId = session.role === 'FARMER' ? session.id : agriCase.farmerId
   const expertId = parsed.data.expertId
-  const consultation = await db.consultation.create({
-    data: { caseId: parsed.data.caseId, farmerId, expertId, type: parsed.data.type, status: 'REQUESTED' },
+
+  const existing = await db.consultation.findFirst({
+    where: { caseId: parsed.data.caseId },
+    include: {
+      agriCase: { select: { id: true, title: true, crop: true, category: true, status: true } },
+      farmer: { select: { id: true, name: true, avatarUrl: true } },
+      expert: { select: { id: true, name: true, avatarUrl: true } },
+    },
   })
-  await notify(expertId, 'CONSULTATION', 'New consultation request', `A farmer requested a consultation for “${agriCase.title}”.`)
-  if (parsed.data.message) {
-    await db.message.create({ data: { consultationId: consultation.id, senderId: farmerId, body: parsed.data.message } })
+  if (existing) {
+    if (parsed.data.message) {
+      await db.message.create({ data: { consultationId: existing.id, senderId: session.id, body: parsed.data.message } })
+    }
+    return Response.json({ consultation: existing })
   }
-  await audit(session.id, 'CONSULTATION_REQUEST', consultation.id, `Requested ${parsed.data.type} consultation`)
+
+  const initialStatus = session.role === 'EXPERT' || session.id === expertId ? 'ACCEPTED' : 'REQUESTED'
+  const consultation = await db.consultation.create({
+    data: { caseId: parsed.data.caseId, farmerId, expertId, type: parsed.data.type, status: initialStatus },
+  })
+  await notify(expertId, 'CONSULTATION', 'New consultation', `Consultation regarding “${agriCase.title}”.`)
+  if (parsed.data.message) {
+    await db.message.create({ data: { consultationId: consultation.id, senderId: session.id, body: parsed.data.message } })
+  }
+  await audit(session.id, 'CONSULTATION_REQUEST', consultation.id, `Created ${parsed.data.type} consultation`)
   return Response.json({ consultation })
 }

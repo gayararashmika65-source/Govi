@@ -23,8 +23,12 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     `).eq('id', id).single()
     if (error) return Response.json({ error: 'Not found' }, { status: 404 })
     const c = data as any
-    // Authorization: farmer owner, assigned expert, or admin (mirrors the RLS policy)
-    const allowed = c.farmer_id === session.id || c.expert_id === session.id || session.role === 'ADMIN'
+    // Authorization: farmer owner, assigned expert, open/under-review cases for experts, or admin
+    const allowed =
+      c.farmer_id === session.id ||
+      c.expert_id === session.id ||
+      session.role === 'ADMIN' ||
+      (session.role === 'EXPERT' && (!c.expert_id || ['OPEN', 'UNDER_REVIEW'].includes(c.status)))
     if (!allowed) return Response.json({ error: 'Forbidden' }, { status: 403 })
     return Response.json({ case: snakeToCamel(c) })
   }
@@ -46,7 +50,11 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     },
   })
   if (!agriCase) return Response.json({ error: 'Not found' }, { status: 404 })
-  const allowed = agriCase.farmerId === session.id || agriCase.expertId === session.id || session.role === 'ADMIN'
+  const allowed =
+    agriCase.farmerId === session.id ||
+    agriCase.expertId === session.id ||
+    session.role === 'ADMIN' ||
+    (session.role === 'EXPERT' && (!agriCase.expertId || ['OPEN', 'UNDER_REVIEW'].includes(agriCase.status)))
   if (!allowed) return Response.json({ error: 'Forbidden' }, { status: 403 })
   return Response.json({ case: agriCase })
 }

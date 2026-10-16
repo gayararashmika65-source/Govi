@@ -79,7 +79,7 @@ function OverviewView({ dash }: { dash: DashboardState }) {
             recent.map((c) => (
               <button key={c.id} onClick={() => dash.openSubView('case-detail', c.id)} className="flex w-full items-center gap-3 rounded-lg border border-border p-3 text-left hover:bg-muted/50">
                 <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary"><Sprout className="h-4 w-4" /></span>
-                <div className="min-w-0 flex-1"><div className="truncate text-sm font-medium">{c.title}</div><div className="text-xs text-muted-foreground">{c.crop} · {c.farmer.name} · {timeAgo(c.createdAt)}</div></div>
+                <div className="min-w-0 flex-1"><div className="truncate text-sm font-medium">{c.title}</div><div className="text-xs text-muted-foreground">{c.crop} · {c.farmer?.name || 'Farmer'} · {timeAgo(c.createdAt)}</div></div>
                 <StatusBadge status={c.status} />
               </button>
             ))}
@@ -120,7 +120,7 @@ function QueueView({ onOpen }: { onOpen: (id: string) => void }) {
                 <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1"><Sprout className="h-3 w-3" /> {c.crop}</span>
                   <span className="flex items-center gap-1"><Tag className="h-3 w-3" /> {c.category}</span>
-                  <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {c.farmer.name}</span>
+                  <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {c.farmer?.name || 'Farmer'}</span>
                   {c.attachments.length > 0 && <span>· {c.attachments.length} photo(s)</span>}
                   <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {timeAgo(c.createdAt)}</span>
                 </div>
@@ -158,10 +158,20 @@ function ConsultationsView({ onOpen }: { onOpen: (id: string) => void }) {
             <Card key={c.id}>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <Avatar className="h-11 w-11"><AvatarImage src={c.farmer.avatarUrl || undefined} /><AvatarFallback className="bg-primary/10 text-primary text-xs">{c.farmer.name.split(' ').map((s) => s[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
+                  <Avatar className="h-11 w-11">
+                    <AvatarImage src={c.farmer?.avatarUrl || undefined} />
+                    <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+                      {(c.farmer?.name || 'Farmer').split(' ').filter(Boolean).map((s) => s[0]).slice(0, 2).join('').toUpperCase() || 'F'}
+                    </AvatarFallback>
+                  </Avatar>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2"><span className="truncate font-medium">{c.farmer.name}</span><StatusBadge status={c.status} /></div>
-                    <div className="text-xs text-muted-foreground">Re: {c.agriCase.title} · {c.type}</div>
+                    <div className="flex items-center gap-2">
+                      <span className="truncate font-medium">{c.farmer?.name || 'Farmer'}</span>
+                      <StatusBadge status={c.status} />
+                    </div>
+                    <div className="text-xs text-muted-foreground truncate">
+                      Re: {c.agriCase?.title || 'Agricultural Case'} · {c.type || 'CHAT'}
+                    </div>
                   </div>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -204,7 +214,7 @@ function RecommendationsView({ onOpen }: { onOpen: (id: string) => void }) {
         <div className="grid gap-3">{recs.map((c) => (
           <button key={c.id} onClick={() => onOpen(c.id)} className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 text-left hover:shadow-md">
             <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700"><CheckCircle2 className="h-5 w-5" /></span>
-            <div className="min-w-0 flex-1"><div className="truncate font-medium">{c.title}</div><div className="text-xs text-muted-foreground">{c.crop} · {c.farmer.name}</div></div>
+            <div className="min-w-0 flex-1"><div className="truncate font-medium">{c.title}</div><div className="text-xs text-muted-foreground">{c.crop} · {c.farmer?.name || 'Farmer'}</div></div>
             <StatusBadge status={c.status} />
           </button>
         ))}</div>}

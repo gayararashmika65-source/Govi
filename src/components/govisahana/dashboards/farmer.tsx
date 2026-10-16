@@ -309,16 +309,21 @@ function MessagesView({ onOpen }: { onOpen: (id: string) => void }) {
       {loading ? <div className="space-y-2">{[0, 1].map((i) => <div key={i} className="h-20 animate-pulse rounded-lg border border-border bg-muted/40" />)}</div> :
         consultations.length === 0 ? <EmptyState icon={<MessageSquare className="h-5 w-5" />} title="No messages yet" description="When you request a consultation, your conversations will appear here." /> :
         <div className="grid gap-3">
-          {consultations.map((c) => (
-            <button key={c.id} onClick={() => onOpen(c.id)} className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 text-left hover:shadow-md">
-              <Avatar className="h-11 w-11"><AvatarImage src={c.expert.avatarUrl || undefined} /><AvatarFallback className="bg-primary/10 text-primary text-xs">{c.expert.name.split(' ').map((s) => s[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2"><span className="truncate font-medium">{c.expert.name}</span><StatusBadge status={c.status} /></div>
-                <div className="text-xs text-muted-foreground">Re: {c.agriCase.title}</div>
-              </div>
-              <MessageSquare className="h-4 w-4 text-muted-foreground" />
-            </button>
-          ))}
+          {consultations.map((c) => {
+            const expertName = c.expert?.name || 'Agricultural Expert'
+            const caseTitle = c.agriCase?.title || 'Agricultural Case Consultation'
+            const initials = expertName.split(' ').filter(Boolean).map((s) => s[0]).slice(0, 2).join('').toUpperCase() || 'E'
+            return (
+              <button key={c.id} onClick={() => onOpen(c.id)} className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 text-left hover:shadow-md transition-shadow">
+                <Avatar className="h-11 w-11"><AvatarImage src={c.expert?.avatarUrl || undefined} /><AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">{initials}</AvatarFallback></Avatar>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2"><span className="truncate font-medium">{expertName}</span><StatusBadge status={c.status} /></div>
+                  <div className="text-xs text-muted-foreground truncate">Re: {caseTitle}</div>
+                </div>
+                <MessageSquare className="h-4 w-4 text-muted-foreground" />
+              </button>
+            )
+          })}
         </div>}
     </div>
   )
