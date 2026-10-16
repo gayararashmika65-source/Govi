@@ -37,7 +37,14 @@ export function CaseDetailPanel({ caseId, onBack, dash, isExpert }: { caseId: st
   const load = async () => {
     try {
       const data = await api<{ case: AgriCase }>(`/api/cases/${caseId}`)
-      setCase(data.case)
+      if (data?.case) {
+        setCase({
+          ...data.case,
+          attachments: data.case.attachments || (data.case as any).caseAttachments || [],
+          consultations: data.case.consultations || [],
+          recommendations: data.case.recommendations || [],
+        })
+      }
     } catch { /* ignore */ } finally {
       setLoading(false)
     }
@@ -102,8 +109,8 @@ export function CaseDetailPanel({ caseId, onBack, dash, isExpert }: { caseId: st
     return <MessagingPanel consultationId={messagingConsultationId} onBack={() => setMessagingConsultationId(null)} />
   }
 
-  const activeConsultation = agriCase.consultations[0]
-  const category = CASE_CATEGORIES.find((c) => c.value === agriCase.category)
+  const activeConsultation = agriCase.consultations?.[0]
+  const category = agriCase.category ? CASE_CATEGORIES.find((c) => c.value === agriCase.category) : null
 
   return (
     <div className="space-y-5">
@@ -133,12 +140,12 @@ export function CaseDetailPanel({ caseId, onBack, dash, isExpert }: { caseId: st
           </Card>
 
           {/* Attachments */}
-          {agriCase.attachments.length > 0 && (
+          {(agriCase.attachments?.length ?? 0) > 0 && (
             <Card>
               <CardHeader><CardTitle className="text-base">Photographs</CardTitle></CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {agriCase.attachments.map((a) => (
+                  {agriCase.attachments?.map((a) => (
                     <a key={a.id} href={a.filePath} target="_blank" rel="noreferrer" className="overflow-hidden rounded-lg border border-border">
                       <img src={a.filePath} alt="case attachment" className="h-28 w-full object-cover" />
                     </a>
@@ -168,13 +175,13 @@ export function CaseDetailPanel({ caseId, onBack, dash, isExpert }: { caseId: st
                   </div>
                 </div>
               )}
-              {agriCase.recommendations.length === 0 && !showRecForm ? (
+              {(agriCase.recommendations?.length ?? 0) === 0 && !showRecForm ? (
                 <EmptyState icon={<ClipboardList className="h-5 w-5" />} title="No recommendations yet" description={isExpert ? 'Submit your diagnosis and advice for this case.' : 'An expert will add recommendations here.'} />
               ) : (
-                agriCase.recommendations.map((r) => (
+                agriCase.recommendations?.map((r) => (
                   <div key={r.id} className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold text-emerald-900">{r.expert.name}</span>
+                      <span className="text-sm font-semibold text-emerald-900">{r.expert?.name || 'Agricultural Expert'}</span>
                       <span className="text-xs text-muted-foreground">{timeAgo(r.createdAt)}</span>
                     </div>
                     <p className="mt-2 text-sm"><span className="font-medium">Diagnosis: </span>{r.diagnosis}</p>
@@ -205,9 +212,9 @@ export function CaseDetailPanel({ caseId, onBack, dash, isExpert }: { caseId: st
               {agriCase.expert ? (
                 <div className="flex items-center gap-2">
                   <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                    {(agriCase.expert.name || 'Expert').split(' ').filter(Boolean).map((s) => s[0]).slice(0, 2).join('')}
+                    {(agriCase.expert?.name || 'Expert').split(' ').filter(Boolean).map((s) => s[0]).slice(0, 2).join('')}
                   </span>
-                  <span className="font-medium">{agriCase.expert.name}</span>
+                  <span className="font-medium">{agriCase.expert?.name || 'Assigned Expert'}</span>
                 </div>
               ) : (
                 <p className="text-muted-foreground">Not yet assigned</p>

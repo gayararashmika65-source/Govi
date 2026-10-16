@@ -23,11 +23,12 @@ const MAP: Record<string, string> = {
   REJECTED: 'bg-rose-100 text-rose-700',
 }
 
-export function StatusBadge({ status, className }: { status: string; className?: string }) {
+export function StatusBadge({ status, className }: { status?: string | null; className?: string }) {
   const t = useT()
-  const cls = MAP[status] || 'bg-slate-100 text-slate-600'
-  const localized = t('status.' + status)
-  const label = localized !== 'status.' + status ? localized : status.replace(/_/g, ' ')
+  const safeStatus = status || 'OPEN'
+  const cls = MAP[safeStatus] || 'bg-slate-100 text-slate-600'
+  const localized = t('status.' + safeStatus)
+  const label = localized !== 'status.' + safeStatus ? localized : safeStatus.replace(/_/g, ' ')
   return (
     <span className={cn('inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize', cls, className)}>
       {label}

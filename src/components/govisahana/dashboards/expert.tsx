@@ -39,9 +39,9 @@ function OverviewView({ dash }: { dash: DashboardState }) {
       const cases = d.cases || []
       setStats((s) => ({
         ...s,
-        openCases: cases.filter((c: Case) => ['OPEN', 'UNDER_REVIEW'].includes(c.status)).length,
+        openCases: cases.filter((c: Case) => c?.status && ['OPEN', 'UNDER_REVIEW'].includes(c.status)).length,
         myCases: cases.filter((c: Case) => c.expert?.id === user?.id).length,
-        resolved: cases.filter((c: Case) => c.status === 'RESOLVED' && c.expert?.id === user?.id).length,
+        resolved: cases.filter((c: Case) => c?.status === 'RESOLVED' && c.expert?.id === user?.id).length,
       }))
       setRecent(cases.slice(0, 5))
     }).catch(() => {})
@@ -90,6 +90,7 @@ function OverviewView({ dash }: { dash: DashboardState }) {
 }
 
 function QueueView({ onOpen }: { onOpen: (id: string) => void }) {
+  const { user } = useApp()
   const [cases, setCases] = useState<Case[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('open')
@@ -99,7 +100,7 @@ function QueueView({ onOpen }: { onOpen: (id: string) => void }) {
   }
   useEffect(() => { load() }, [])
 
-  const filtered = filter === 'open' ? cases.filter((c) => ['OPEN', 'UNDER_REVIEW'].includes(c.status)) : filter === 'mine' ? cases.filter((c) => c.expert?.id) : cases
+  const filtered = filter === 'open' ? cases.filter((c) => c?.status && ['OPEN', 'UNDER_REVIEW'].includes(c.status)) : filter === 'mine' ? cases.filter((c) => c.expert?.id === user?.id) : cases
 
   return (
     <div className="space-y-5">
@@ -121,7 +122,7 @@ function QueueView({ onOpen }: { onOpen: (id: string) => void }) {
                   <span className="flex items-center gap-1"><Sprout className="h-3 w-3" /> {c.crop}</span>
                   <span className="flex items-center gap-1"><Tag className="h-3 w-3" /> {c.category}</span>
                   <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {c.farmer?.name || 'Farmer'}</span>
-                  {c.attachments.length > 0 && <span>· {c.attachments.length} photo(s)</span>}
+                  {(c.attachments?.length ?? 0) > 0 && <span>· {c.attachments?.length} photo(s)</span>}
                   <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {timeAgo(c.createdAt)}</span>
                 </div>
               </div>

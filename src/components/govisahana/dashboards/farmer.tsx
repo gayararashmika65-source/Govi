@@ -33,7 +33,7 @@ export default function FarmerDashboard({ dash }: { dash: DashboardState }) {
 
   if (dash.tab === 'create') return <CreateCaseView onCreated={(id) => dash.openSubView('case-detail', id)} onBack={() => dash.setTab('cases')} />
 
-  if (dash.tab === 'cases') return <CasesView farmerId={user!.id} onOpen={(id) => dash.openSubView('case-detail', id)} onCreate={() => dash.setTab('create')} />
+  if (dash.tab === 'cases') return <CasesView farmerId={user?.id || ''} onOpen={(id) => dash.openSubView('case-detail', id)} onCreate={() => dash.setTab('create')} />
   if (dash.tab === 'experts') return <FindExpertsView onBack={() => dash.setTab('overview')} />
   if (dash.tab === 'crops') return <CropsView />
   if (dash.tab === 'messages') return <MessagesView onOpen={(id) => dash.openSubView('messaging', id)} />
@@ -51,7 +51,12 @@ function OverviewView({ dash }: { dash: DashboardState }) {
   useEffect(() => {
     fetch('/api/cases', { credentials: 'include' }).then((r) => r.json()).then((d) => {
       const cases = d.cases || []
-      setStats((s) => ({ ...s, cases: cases.length, open: cases.filter((c: Case) => ['OPEN', 'UNDER_REVIEW', 'ASSIGNED', 'IN_PROGRESS'].includes(c.status)).length, resolved: cases.filter((c: Case) => c.status === 'RESOLVED').length }))
+      setStats((s) => ({
+        ...s,
+        cases: cases.length,
+        open: cases.filter((c: Case) => c?.status && ['OPEN', 'UNDER_REVIEW', 'ASSIGNED', 'IN_PROGRESS'].includes(c.status)).length,
+        resolved: cases.filter((c: Case) => c?.status === 'RESOLVED').length,
+      }))
       setRecent(cases.slice(0, 4))
     }).catch(() => {})
     fetch('/api/my', { credentials: 'include' }).then((r) => r.json()).then((d) => {
@@ -122,7 +127,7 @@ function CasesView({ farmerId, onOpen, onCreate }: { farmerId: string; onOpen: (
     fetch('/api/cases', { credentials: 'include' }).then((r) => r.json()).then((d) => { setCases(d.cases || []); setLoading(false) }).catch(() => setLoading(false))
   }, [farmerId])
 
-  const filtered = filter === 'all' ? cases : cases.filter((c) => c.status === filter)
+  const filtered = (cases || []).filter((c) => filter === 'all' || c?.status === filter)
 
   return (
     <div className="space-y-5">
@@ -154,7 +159,7 @@ function CasesView({ farmerId, onOpen, onCreate }: { farmerId: string; onOpen: (
                 <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1"><Sprout className="h-3 w-3" /> {c.crop}</span>
                   <span className="flex items-center gap-1"><Tag className="h-3 w-3" /> {c.category}</span>
-                  {c.expert && <span>· Expert: {c.expert.name}</span>}
+                  {c.expert?.name && <span>· Expert: {c.expert.name}</span>}
                   <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {timeAgo(c.createdAt)}</span>
                 </div>
               </div>
@@ -228,7 +233,7 @@ function CreateCaseView({ onCreated, onBack }: { onCreated: (id: string) => void
                 <Select value={expertId} onValueChange={setExpertId}>
                   <SelectTrigger><SelectValue placeholder="Let experts find me" /></SelectTrigger>
                   <SelectContent>
-                    {experts.map((e) => <SelectItem key={e.user.id} value={e.user.id}>{e.user.name} {e.verified ? '✓' : ''}</SelectItem>)}
+                    {experts.filter((e) => e?.user?.id).map((e) => <SelectItem key={e.user.id} value={e.user.id}>{e.user.name} {e.verified ? '✓' : ''}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
