@@ -283,15 +283,20 @@ model CropListing {
   id            String   @id @default(cuid())
   ownerId       String
   owner         User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  category      String?  // Coconuts | Vegetables | Fruits | Spices | Rice and Paddy | Tea | Rubber | Grains and Pulses | Root Crops and Tubers | Other Crops
   cropName      String
   variety       String?
   quantity      Float
-  unit          String   // kg, bunch, ton, bag
-  expectedHarvestDate DateTime?
-  district      String?
+  unit          String   // kg, bunch, ton, bag, nuts
+  priceUnit     String?  // per kg, per nut, per 50kg bag, per ton
   askingPrice   Float?
-  grade         String?  // A | B | C
+  grade         String?  // Grade A | Grade B | Grade C | Premium | Organic
+  description   String?
   imageUrl      String?
+  mediaUrls     String?  // JSON string array of image URLs
+  district      String?
+  expectedHarvestDate DateTime?
+  status        String   @default("AVAILABLE") // AVAILABLE | RESERVED | SOLD | INACTIVE
   available     Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
