@@ -6,15 +6,19 @@ import { unauthorized, apiError, forbidden } from '@/lib/server-helpers'
 import { snakeToCamel } from '@/lib/case-convert'
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getSession()
-  if (!session) return unauthorized()
   const { id } = await params
   if (useSupabaseAuth) {
     const admin = getSupabaseAdmin()
-    if (!admin) return apiError('Supabase not configured', 500)
-    const { data: crop, error } = await admin.from('crop_listings').select('*, owner:profiles!crop_listings_owner_id_fkey(id, name, email, phone, avatar_url, role)').eq('id', id).single()
-    if (error || !crop) return Response.json({ error: 'Not found' }, { status: 404 })
-    return Response.json({ crop: snakeToCamel(crop) })
+    if (admin) {
+      try {
+        const { data: crop, error } = await admin.from('crop_listings').select('*, owner:profiles!crop_listings_owner_id_fkey(id, name, email, phone, avatar_url, role)').eq('id', id).single()
+        if (!error && crop) {
+          return Response.json({ crop: snakeToCamel(crop) })
+        }
+      } catch {
+        // Fall back to Prisma below
+      }
+    }
   }
   const crop = await db.cropListing.findUnique({
     where: { id },
@@ -30,24 +34,30 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { id } = await params
   let body
   try { body = await req.json() } catch { return apiError('Invalid body') }
+
   if (useSupabaseAuth) {
     const admin = getSupabaseAdmin()
-    if (!admin) return apiError('Supabase not configured', 500)
-    const { data: existing } = await admin.from('crop_listings').select('owner_id').eq('id', id).single()
-    if (!existing) return apiError('Not found', 404)
-    if (existing.owner_id !== session.id && session.role !== 'ADMIN') return forbidden()
-    const update: Record<string, unknown> = {}
-    for (const [k, v] of Object.entries(body)) update[k.replace(/[A-Z]/g, (c) => '_' + c.toLowerCase())] = v
-    if (update.expected_harvest_date) update.expected_harvest_date = new Date(update.expected_harvest_date as string).toISOString().split('T')[0]
-    if (update.media_urls && Array.isArray(update.media_urls)) update.media_urls = JSON.stringify(update.media_urls)
-    if (typeof update.status === 'string') {
-      update.available = update.status === 'AVAILABLE'
-    } else if (typeof update.available === 'boolean') {
-      update.status = update.available ? 'AVAILABLE' : 'RESERVED'
+    if (admin) {
+      try {
+        const { data: existing } = await admin.from('crop_listings').select('owner_id').eq('id', id).single()
+        if (existing) {
+          if (existing.owner_id !== session.id && session.role !== 'ADMIN') return forbidden()
+          const update: Record<string, unknown> = {}
+          for (const [k, v] of Object.entries(body)) update[k.replace(/[A-Z]/g, (c) => '_' + c.toLowerCase())] = v
+          if (update.expected_harvest_date) update.expected_harvest_date = new Date(update.expected_harvest_date as string).toISOString().split('T')[0]
+          if (update.media_urls && Array.isArray(update.media_urls)) update.media_urls = JSON.stringify(update.media_urls)
+          if (typeof update.status === 'string') {
+            update.available = update.status === 'AVAILABLE'
+          } else if (typeof update.available === 'boolean') {
+            update.status = update.available ? 'AVAILABLE' : 'RESERVED'
+          }
+          const { data: updated, error } = await admin.from('crop_listings').update(update).eq('id', id).select().single()
+          if (!error && updated) return Response.json({ crop: snakeToCamel(updated) })
+        }
+      } catch {
+        // Fall back to Prisma below
+      }
     }
-    const { data: updated, error } = await admin.from('crop_listings').update(update).eq('id', id).select().single()
-    if (error) return apiError(error.message, 500)
-    return Response.json({ crop: snakeToCamel(updated) })
   }
 
   const existing = await db.cropListing.findUnique({ where: { id } })

@@ -96,6 +96,7 @@ export default function CropsView() {
 
   // Selected Category (null = Screen 1: Categories, non-null = Screen 2: Listings within Category)
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
+  const [screenTab, setScreenTab] = useState<'categories' | 'all'>('categories')
 
   // Data
   const [crops, setCrops] = useState<CropListingItem[]>([])
@@ -302,8 +303,11 @@ export default function CropsView() {
         {/* =========================================================================
             SCREEN 1: CROP CATEGORIES (WHATSAPP CHAT-LIST-STYLE ROWS)
             ========================================================================= */}
+        {/* =========================================================================
+            SCREEN 1: CROP CATEGORIES (WHATSAPP CHAT-LIST-STYLE ROWS)
+            ========================================================================= */}
         {!selectedCategoryId && (
-          <div className="space-y-4">
+          <div className="space-y-5">
             {/* Header / Intro */}
             <div className="rounded-2xl border border-emerald-600/20 bg-gradient-to-br from-emerald-500/10 via-background to-teal-500/10 p-5 sm:p-6 shadow-xs">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -335,24 +339,61 @@ export default function CropsView() {
                 </Button>
               </div>
 
+              {/* View Switcher Tabs (Browse Categories vs All Harvest Listings) */}
+              <div className="mt-5 flex items-center gap-2 border-t border-border/50 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setScreenTab('categories')}
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+                    screenTab === 'categories'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'text-muted-foreground hover:text-foreground bg-background/60 hover:bg-background'
+                  }`}
+                >
+                  <Sprout className="h-3.5 w-3.5" />
+                  {lang === 'si' ? 'බෝග කාණ්ඩ' : 'Browse Categories'} ({filteredCategories.length})
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setScreenTab('all')}
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+                    screenTab === 'all'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'text-muted-foreground hover:text-foreground bg-background/60 hover:bg-background'
+                  }`}
+                >
+                  <Scale className="h-3.5 w-3.5" />
+                  {lang === 'si' ? 'සියලු අස්වනු ලැයිස්තුව' : 'All Harvest Listings'} ({crops.length})
+                </button>
+              </div>
+
               {/* WhatsApp-Style Search Input */}
-              <div className="relative mt-4">
+              <div className="relative mt-3">
                 <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  value={categorySearch}
-                  onChange={(e) => setCategorySearch(e.target.value)}
+                  value={screenTab === 'categories' ? categorySearch : listingSearch}
+                  onChange={(e) => {
+                    if (screenTab === 'categories') setCategorySearch(e.target.value)
+                    else setListingSearch(e.target.value)
+                  }}
                   placeholder={
-                    lang === 'si'
-                      ? 'කාණ්ඩයක් හෝ බෝගයක් සොයන්න (උදා: තක්කාලි, පොල්, තේ)...'
-                      : lang === 'ta'
-                      ? 'பிரிவு அல்லது பயிரைத் தேடுங்கள் (எ.கா: தக்காளி, தேங்காய், தேயிலை)...'
-                      : 'Search crop categories or produce (e.g. Coconuts, Tomatoes, Tea)...'
+                    screenTab === 'categories'
+                      ? (lang === 'si'
+                        ? 'කාණ්ඩයක් හෝ බෝගයක් සොයන්න (උදා: තක්කාලි, පොල්, තේ)...'
+                        : 'Search crop categories or produce (e.g. Coconuts, Tomatoes, Tea)...')
+                      : (lang === 'si'
+                        ? 'සියලු අස්වනු අතර සොයන්න (උදා: තක්කාලි, සම්බා, කුරුඳු)...'
+                        : 'Search all harvest listings by crop, variety, district...')
                   }
                   className="h-11 rounded-xl bg-background/80 pl-10 pr-9 text-sm shadow-xs border-border/80 focus-visible:ring-emerald-500"
                 />
-                {categorySearch && (
+                {(screenTab === 'categories' ? categorySearch : listingSearch) && (
                   <button
-                    onClick={() => setCategorySearch('')}
+                    onClick={() => {
+                      if (screenTab === 'categories') setCategorySearch('')
+                      else setListingSearch('')
+                    }}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
                     <X className="h-4 w-4" />
@@ -361,79 +402,300 @@ export default function CropsView() {
               </div>
             </div>
 
-            {/* Categories List Container (WhatsApp-Style Vertical List) */}
-            <div className="rounded-2xl border border-border/70 bg-card overflow-hidden shadow-xs divide-y divide-border/50">
-              <div className="bg-muted/40 px-4 py-2.5 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                <span>{lang === 'si' ? 'බෝග කාණ්ඩ' : lang === 'ta' ? 'பயிர் பிரிவுகள்' : 'Crop Categories'} ({filteredCategories.length})</span>
-                <span>{lang === 'si' ? 'ලබාගත හැකි අස්වැන්න' : lang === 'ta' ? 'கிடைக்கும் அறுவடைகள்' : 'Available Harvests'}</span>
-              </div>
+            {/* TAB 1: CATEGORIES LIST */}
+            {screenTab === 'categories' && (
+              <div className="space-y-6">
+                <div className="rounded-2xl border border-border/70 bg-card overflow-hidden shadow-xs divide-y divide-border/50">
+                  <div className="bg-muted/40 px-4 py-2.5 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    <span>{lang === 'si' ? 'බෝග කාණ්ඩ' : lang === 'ta' ? 'பயிர் பிரிவுகள்' : 'Crop Categories'} ({filteredCategories.length})</span>
+                    <span>{lang === 'si' ? 'ලබාගත හැකි අස්වැන්න' : lang === 'ta' ? 'கிடைக்கும் அறுவடைகள்' : 'Available Harvests'}</span>
+                  </div>
 
-              {filteredCategories.length === 0 ? (
-                <div className="p-8 text-center text-sm text-muted-foreground">
-                  <p>{lang === 'si' ? 'සොයන ලද කාණ්ඩය හමු නොවීය.' : 'No crop categories matching your search.'}</p>
+                  {filteredCategories.length === 0 ? (
+                    <div className="p-8 text-center text-sm text-muted-foreground">
+                      <p>{lang === 'si' ? 'සොයන ලද කාණ්ඩය හමු නොවීය.' : 'No crop categories matching your search.'}</p>
+                    </div>
+                  ) : (
+                    filteredCategories.map((category) => {
+                      const count = categoryCounts[category.id] ?? 0
+                      return (
+                        <div
+                          key={category.id}
+                          onClick={() => {
+                            setSelectedCategoryId(category.id)
+                            setListingSearch('')
+                            setDistrictFilter('all')
+                          }}
+                          className="group flex items-center gap-3.5 p-3 sm:p-4 hover:bg-emerald-50/40 dark:hover:bg-muted/50 cursor-pointer transition-colors active:bg-emerald-100/40"
+                        >
+                          {/* Left: Circular / Rounded Category Image Avatar */}
+                          <div className="relative shrink-0">
+                            <img
+                              src={category.imageUrl}
+                              alt={category.name}
+                              className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl object-cover ring-1 ring-border/50 shadow-xs group-hover:scale-105 transition-transform duration-200"
+                            />
+                            {count > 0 && (
+                              <span className="sm:hidden absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-600 px-1 text-[10px] font-bold text-white shadow-xs">
+                                {count}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Middle: Name & Crop Examples */}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <h3 className="font-bold text-sm sm:text-base text-foreground tracking-tight group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors">
+                                {category.name}
+                                <span className="ml-2 text-xs font-normal text-muted-foreground">
+                                  {lang === 'si' ? category.nameSi : lang === 'ta' ? category.nameTa : category.nameSi}
+                                </span>
+                              </h3>
+                            </div>
+
+                            {/* WhatsApp-Style Message Preview / Crop Examples */}
+                            <p className="mt-0.5 text-xs sm:text-sm text-muted-foreground line-clamp-1">
+                              {lang === 'si' && category.examplesSi ? category.examplesSi : category.examples}
+                            </p>
+                          </div>
+
+                          {/* Right: Available Listings Count Pill Badge + Chevron */}
+                          <div className="flex items-center gap-2.5 shrink-0">
+                            <span
+                              className={`hidden sm:inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-bold transition-all shadow-xs ${
+                                count > 0
+                                  ? 'bg-emerald-600 text-white'
+                                  : 'bg-muted text-muted-foreground font-medium'
+                              }`}
+                            >
+                              {count > 0 ? `${count} ${lang === 'si' ? 'අස්වනු' : 'available'}` : '0 listings'}
+                            </span>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
+                          </div>
+                        </div>
+                      )
+                    })
+                  )}
                 </div>
-              ) : (
-                filteredCategories.map((category) => {
-                  const count = categoryCounts[category.id] ?? 0
-                  return (
-                    <div
-                      key={category.id}
-                      onClick={() => {
-                        setSelectedCategoryId(category.id)
-                        setListingSearch('')
-                        setDistrictFilter('all')
-                      }}
-                      className="group flex items-center gap-3.5 p-3 sm:p-4 hover:bg-emerald-50/40 dark:hover:bg-muted/50 cursor-pointer transition-colors active:bg-emerald-100/40"
+
+                {/* Immediate Visibility: Recent Farmer Harvests on Screen 1 */}
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Sprout className="h-4 w-4 text-emerald-600" />
+                      <h2 className="text-sm sm:text-base font-bold text-foreground">
+                        {lang === 'si' ? 'නැවුම් ගොවි අස්වනු' : 'Recent Farmer Harvests'}
+                      </h2>
+                      <Badge variant="outline" className="text-xs bg-emerald-50 text-emerald-700 border-emerald-300">
+                        {crops.length} {lang === 'si' ? 'සම්පූර්ණ අස්වනු' : 'total listings'}
+                      </Badge>
+                    </div>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setScreenTab('all')}
+                      className="text-xs text-emerald-600 hover:text-emerald-700 font-semibold"
                     >
-                      {/* Left: Circular / Rounded Category Image Avatar */}
-                      <div className="relative shrink-0">
-                        <img
-                          src={category.imageUrl}
-                          alt={category.name}
-                          className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl object-cover ring-1 ring-border/50 shadow-xs group-hover:scale-105 transition-transform duration-200"
-                        />
-                        {count > 0 && (
-                          <span className="sm:hidden absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-600 px-1 text-[10px] font-bold text-white shadow-xs">
-                            {count}
+                      {lang === 'si' ? 'සියල්ල බලන්න →' : 'View All Listings →'}
+                    </Button>
+                  </div>
+
+                  <div className="rounded-2xl border border-border/70 bg-card overflow-hidden shadow-xs divide-y divide-border/50">
+                    {loading ? (
+                      <div className="p-4 space-y-3">
+                        {[...Array(4)].map((_, i) => (
+                          <div key={i} className="flex items-center gap-3">
+                            <Skeleton className="h-12 w-12 rounded-xl" />
+                            <div className="space-y-1 flex-1">
+                              <Skeleton className="h-4 w-1/3" />
+                              <Skeleton className="h-3 w-1/2" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : crops.length === 0 ? (
+                      <div className="p-6 text-center text-xs text-muted-foreground">
+                        No recent harvest listings available.
+                      </div>
+                    ) : (
+                      crops.slice(0, 8).map((listing) => (
+                        <div
+                          key={listing.id}
+                          onClick={() => openDetail('crop-detail', listing.id)}
+                          className="group flex items-center gap-3 sm:gap-4 p-3 hover:bg-emerald-50/40 dark:hover:bg-muted/50 cursor-pointer transition-colors"
+                        >
+                          <img
+                            src={listing.imageUrl || 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=256&q=80'}
+                            alt={listing.cropName}
+                            className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl object-cover ring-1 ring-border/50 shrink-0"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between text-xs text-muted-foreground">
+                              <span className="font-semibold text-foreground truncate flex items-center gap-1">
+                                <User className="h-3 w-3 text-muted-foreground" />
+                                {listing.owner.name}
+                              </span>
+                              <span className="text-[11px]">{timeAgo(listing.createdAt)}</span>
+                            </div>
+                            <div className="font-bold text-sm text-foreground group-hover:text-emerald-700 transition-colors flex items-center gap-1.5 mt-0.5">
+                              {listing.cropName}
+                              {listing.variety && (
+                                <span className="text-xs font-normal text-muted-foreground">
+                                  ({listing.variety})
+                                </span>
+                              )}
+                              {listing.category && (
+                                <Badge variant="secondary" className="text-[10px] h-4 px-1 font-normal">
+                                  {listing.category}
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="text-xs text-muted-foreground flex items-center gap-3 mt-0.5">
+                              <span className="flex items-center gap-1">
+                                <MapPin className="h-3 w-3 text-emerald-600" />
+                                {listing.district}
+                              </span>
+                              <span>•</span>
+                              <span>{listing.quantity.toLocaleString()} {listing.unit}</span>
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <div className="font-extrabold text-sm text-emerald-700 dark:text-emerald-400">
+                              {money(listing.askingPrice)}
+                            </div>
+                            <div className="text-[10px] text-muted-foreground">
+                              {listing.priceUnit || `per ${listing.unit}`}
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: ALL HARVEST LISTINGS */}
+            {screenTab === 'all' && (
+              <div className="space-y-4">
+                {/* Search & Filter Bar */}
+                <div className="rounded-2xl border border-border/70 bg-card p-3 sm:p-4 shadow-xs grid gap-2.5 sm:grid-cols-12">
+                  <div className="sm:col-span-6">
+                    <Select value={districtFilter} onValueChange={setDistrictFilter}>
+                      <SelectTrigger className="h-9 text-xs">
+                        <MapPin className="mr-1.5 h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        <SelectValue placeholder="All districts" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-72">
+                        <SelectItem value="all">All Districts</SelectItem>
+                        {SRI_LANKAN_DISTRICTS.map((d) => (
+                          <SelectItem key={d} value={d}>{d}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="sm:col-span-6">
+                    <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
+                      <SelectTrigger className="h-9 text-xs">
+                        <ArrowUpDown className="mr-1.5 h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        <SelectValue placeholder="Sort by" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="newest">Newest First</SelectItem>
+                        <SelectItem value="price_asc">Price: Low to High</SelectItem>
+                        <SelectItem value="price_desc">Price: High to Low</SelectItem>
+                        <SelectItem value="quantity_desc">Highest Quantity</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* All Farmer Listings in WhatsApp-Style Rows */}
+                <div className="rounded-2xl border border-border/70 bg-card overflow-hidden shadow-xs divide-y divide-border/50">
+                  <div className="bg-muted/40 px-4 py-2.5 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    <span>Farmer Produce ({displayedListings.length})</span>
+                    <span>Direct Price</span>
+                  </div>
+
+                  {displayedListings.map((listing) => (
+                    <div
+                      key={listing.id}
+                      onClick={() => openDetail('crop-detail', listing.id)}
+                      className="group flex items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 hover:bg-emerald-50/40 dark:hover:bg-muted/50 cursor-pointer transition-colors"
+                    >
+                      <img
+                        src={listing.imageUrl || 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=256&q=80'}
+                        alt={listing.cropName}
+                        className="h-14 w-14 sm:h-16 sm:w-16 rounded-xl object-cover ring-1 ring-border/50 shadow-xs group-hover:scale-105 transition-transform shrink-0"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span className="font-semibold text-foreground truncate flex items-center gap-1">
+                            <User className="h-3 w-3 text-muted-foreground" />
+                            {listing.owner.name}
                           </span>
+                          <span className="text-[11px]">{timeAgo(listing.createdAt)}</span>
+                        </div>
+                        <div className="mt-0.5 flex flex-wrap items-baseline gap-1.5">
+                          <h3 className="font-bold text-sm sm:text-base text-foreground group-hover:text-emerald-700 transition-colors">
+                            {listing.cropName}
+                          </h3>
+                          {listing.variety && (
+                            <span className="text-xs text-muted-foreground font-normal">
+                              ({listing.variety})
+                            </span>
+                          )}
+                          {listing.category && (
+                            <Badge variant="outline" className="text-[10px] h-4.5 px-1.5 border-emerald-200 text-emerald-700 bg-emerald-50/50">
+                              {listing.category}
+                            </Badge>
+                          )}
+                          {listing.grade && (
+                            <Badge variant="secondary" className="text-[10px] h-4.5 px-1.5 font-normal">
+                              {listing.grade}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1 font-medium text-foreground/80">
+                            <MapPin className="h-3 w-3 text-emerald-600" />
+                            {listing.district || 'Sri Lanka'}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Scale className="h-3 w-3 text-muted-foreground" />
+                            {listing.quantity.toLocaleString()} {listing.unit}
+                          </span>
+                          {listing.expectedHarvestDate && (
+                            <span className="hidden sm:inline-flex items-center gap-1 text-[11px]">
+                              <Calendar className="h-3 w-3 text-muted-foreground" />
+                              Harvest: {formatDate(listing.expectedHarvestDate)}
+                            </span>
+                          )}
+                        </div>
+                        {listing.description && (
+                          <p className="mt-1 text-xs text-muted-foreground/80 line-clamp-1 italic">
+                            "{listing.description}"
+                          </p>
                         )}
                       </div>
-
-                      {/* Middle: Name & Crop Examples */}
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <h3 className="font-bold text-sm sm:text-base text-foreground tracking-tight group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors">
-                            {category.name}
-                            <span className="ml-2 text-xs font-normal text-muted-foreground">
-                              {lang === 'si' ? category.nameSi : lang === 'ta' ? category.nameTa : category.nameSi}
-                            </span>
-                          </h3>
+                      <div className="flex flex-col items-end justify-center self-center shrink-0 pl-1 sm:pl-2">
+                        <div className="text-right">
+                          <div className="font-extrabold text-sm sm:text-base text-emerald-700 dark:text-emerald-400">
+                            {money(listing.askingPrice)}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground -mt-0.5">
+                            {listing.priceUnit || `per ${listing.unit}`}
+                          </div>
                         </div>
-
-                        {/* WhatsApp-Style Message Preview / Crop Examples */}
-                        <p className="mt-0.5 text-xs sm:text-sm text-muted-foreground line-clamp-1">
-                          {lang === 'si' && category.examplesSi ? category.examplesSi : category.examples}
-                        </p>
-                      </div>
-
-                      {/* Right: Available Listings Count Pill Badge + Chevron */}
-                      <div className="flex items-center gap-2.5 shrink-0">
-                        <span
-                          className={`hidden sm:inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-bold transition-all shadow-xs ${
-                            count > 0
-                              ? 'bg-emerald-600 text-white'
-                              : 'bg-muted text-muted-foreground font-medium'
-                          }`}
-                        >
-                          {count > 0 ? `${count} ${lang === 'si' ? 'අස්වනු' : 'available'}` : '0 listings'}
-                        </span>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
+                        <ChevronRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-foreground group-hover:translate-x-0.5 transition-all mt-1 hidden sm:block" />
                       </div>
                     </div>
-                  )
-                })
-              )}
-            </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
